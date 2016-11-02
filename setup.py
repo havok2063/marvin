@@ -34,10 +34,15 @@ add_data_file('python/marvin/web/lib/')
 add_data_file('python/marvin/web/static/')
 add_data_file('python/marvin/web/templates/')
 add_data_file('python/marvin/web/uwsgi_conf_files/')
+data_files.append('../marvin/db/dbconfig.ini')
 
 
-NAME = 'marvin'
-VERSION = '2.0-pre'
+requirements_file = os.path.join(os.path.dirname(__file__), 'requirements.txt')
+install_requires = [line.strip() for line in open(requirements_file)
+                    if not line.strip().startswith('#') and line.strip() != '']
+
+NAME = 'sdss-marvin'
+VERSION = '2.0-beta0'
 
 setup(name=NAME,
       version=VERSION,
@@ -51,6 +56,7 @@ setup(name=NAME,
       packages=find_packages(where='python', exclude=['extern']),
       package_dir={'': 'python/'},
       package_data={'': data_files},
+      install_requires=install_requires,
       scripts=['bin/run_marvin'],
       classifiers=[
           'Development Status :: 4 - Beta',
