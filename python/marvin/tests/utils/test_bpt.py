@@ -1,130 +1,140 @@
 #!/usr/bin/env python
 # encoding: utf-8
 #
-# test_bpt.py
+# test_bpt_pytest.py
 #
 # Created by José Sánchez-Gallego on 10 Feb 2017.
+# Converted to pytest by Brett Andrews on 15 Jun 2017.
 
 
 from __future__ import division
 from __future__ import print_function
 from __future__ import absolute_import
 
-
-import os
-import unittest
-import warnings
+import inspect
 
 from matplotlib import pyplot as plt
+from mpl_toolkits.axes_grid1.axes_divider import LocatableAxes
 import numpy as np
+import pytest
 
-from marvin.tests import MarvinTest
+from marvin.core.exceptions import MarvinError
 from marvin.tools.maps import Maps
+from marvin.tests import marvin_test_if_class
+from marvin.utils.dap.bpt import get_snr, bpt_kewley06
 from marvin.core.exceptions import MarvinDeprecationWarning
 
 
-class TestBPT(MarvinTest):
+@pytest.fixture()
+def maps(galaxy, mode):
+    if galaxy.bintype.name != 'SPX':
+        pytest.skip('Only running one bintype for bpt tests')
 
-    @classmethod
-    def setUpClass(cls):
-        super(TestBPT, cls).setUpClass()
+    # if galaxy.release != 'MPL-6':
+    #     pytest.skip('Explicitly skipping here since marvin_test_if_class does not work in 2.7')
 
-        cls.emission_mechanisms = ['sf', 'comp', 'agn', 'seyfert', 'liner', 'invalid', 'ambiguous']
+    maps = Maps(plateifu=galaxy.plateifu, mode=mode)
+    maps.bptsums = galaxy.bptsums if hasattr(galaxy, 'bptsums') else None
+    yield maps
+    maps = None
 
-    def setUp(self):
-        self._reset_the_config()
-        self._update_release('MPL-5')
-        self.set_sasurl('local')
-        self.filename_8485_1901_mpl5_spx = os.path.join(
-            self.mangaanalysis, self.drpver, self.dapver,
-            'SPX-GAU-MILESHC', str(self.plate), self.ifu, self.mapsname)
 
-    def _run_tests_8485_1901(self, maps):
+@marvin_test_if_class(mark='skip', maps=dict(release=['MPL-4', 'MPL-5']))
+class TestBPT(object):
 
-        masks, figure = maps.get_bpt(show_plot=False, return_figure=True, use_oi=True)
-        self.assertIsInstance(figure, plt.Figure)
+    mechanisms = ['sf', 'comp', 'agn', 'seyfert', 'liner', 'invalid', 'ambiguous']
 
-        for em_mech in self.emission_mechanisms:
-            self.assertIn(em_mech, masks.keys())
+    @pytest.mark.parametrize('useoi', [(True), (False)], ids=['withoi', 'nooi'])
+    def test_bpt(self, maps, useoi):
+        if maps.bptsums is None:
+            pytest.skip('no bpt data found in galaxy test data')
 
-        self.assertEqual(np.sum(masks['sf']['global']), 62)
-        self.assertEqual(np.sum(masks['comp']['global']), 1)
+        bptflag = 'nooi' if useoi is False else 'global'
 
-        for em_mech in ['agn', 'seyfert', 'liner']:
-            self.assertEqual(np.sum(masks[em_mech]['global']), 0)
+        masks, figure, axes = maps.get_bpt(show_plot=False, return_figure=True, use_oi=useoi)
+        assert isinstance(figure, plt.Figure)
 
-        self.assertEqual(np.sum(masks['ambiguous']['global']), 8)
-        self.assertEqual(np.sum(masks['invalid']['global']), 1085)
+        for mech in self.mechanisms:
+            assert mech in masks.keys()
+            assert np.sum(masks[mech]['global']) == maps.bptsums[bptflag][mech]
 
-        self.assertEqual(np.sum(masks['sf']['sii']), 176)
+        if useoi:
+            assert len(axes) == 4
+        else:
+            assert len(axes) == 3
 
-    def test_8485_1901_bpt_file(self):
+        for ax in axes:
+            assert isinstance(ax, LocatableAxes)
 
-        maps = Maps(filename=self.filename_8485_1901_mpl5_spx)
-        self._run_tests_8485_1901(maps)
+    def test_bpt_diffsn(self, maps):
 
-    def test_8485_1901_bpt_db(self):
+        if maps.bptsums is None:
+            pytest.skip('no bpt data found in galaxy test data')
 
-        maps = Maps(plateifu=self.plateifu)
-        self._run_tests_8485_1901(maps)
+        masks, figure, __ = maps.get_bpt(show_plot=False, return_figure=True,
+                                         use_oi=True, snr_min=5)
+        assert isinstance(figure, plt.Figure)
 
-    def test_8485_1901_bpt_api(self):
+        for mech in self.mechanisms:
+            assert mech in masks.keys()
+            assert np.sum(masks[mech]['global']) == maps.bptsums['snrmin5'][mech]
 
-        maps = Maps(plateifu=self.plateifu, mode='remote')
-        self._run_tests_8485_1901(maps)
+    def test_bpt_oldsn(self, maps):
 
-    def test_8485_1901_bpt_no_oi(self):
+        if maps.bptsums is None:
+            pytest.skip('no bpt data found in galaxy test data')
 
-        maps = Maps(plateifu=self.plateifu)
-        masks, figure = maps.get_bpt(show_plot=False, return_figure=True, use_oi=False)
-        self.assertIsInstance(figure, plt.Figure)
-
-        for em_mech in self.emission_mechanisms:
-            self.assertIn(em_mech, masks.keys())
-
-        self.assertNotIn('oi', masks['sf'].keys())
-
-        self.assertEqual(np.sum(masks['sf']['global']), 149)
-        self.assertEqual(np.sum(masks['sf']['sii']), 176)
-
-    def test_8485_1901_bpt_no_figure(self):
-
-        maps = Maps(plateifu=self.plateifu)
-        bpt_return = maps.get_bpt(show_plot=False, return_figure=False, use_oi=False)
-
-        self.assertIsInstance(bpt_return, dict)
-
-    def test_8485_1901_bpt_snr_min(self):
-
-        maps = Maps(plateifu=self.plateifu)
-        masks = maps.get_bpt(snr_min=5, return_figure=False, show_plot=False)
-
-        for em_mech in self.emission_mechanisms:
-            self.assertIn(em_mech, masks.keys())
-
-        self.assertEqual(np.sum(masks['sf']['global']), 28)
-        self.assertEqual(np.sum(masks['sf']['sii']), 112)
-
-    def test_8485_1901_bpt_snr_deprecated(self):
-
-        maps = Maps(plateifu=self.plateifu)
-
-        with warnings.catch_warnings(record=True) as warning_list:
+        with pytest.warns(MarvinDeprecationWarning) as record:
             masks = maps.get_bpt(snr=5, return_figure=False, show_plot=False)
 
-        self.assertTrue(len(warning_list) == 1)
-        self.assertEqual(str(warning_list[0].message),
-                         'snr is deprecated. Use snr_min instead. '
-                         'snr will be removed in a future version of marvin')
+        assert len(record) == 1
+        assert record[0].message.args[0] == ('snr is deprecated. Use snr_min instead. '
+                                             'snr will be removed in a future version of marvin')
 
-        for em_mech in self.emission_mechanisms:
-            self.assertIn(em_mech, masks.keys())
+        for mech in self.mechanisms:
+            assert mech in masks.keys()
+            assert np.sum(masks[mech]['global']) == maps.bptsums['snrmin5'][mech]
 
-        self.assertEqual(np.sum(masks['sf']['global']), 28)
-        self.assertEqual(np.sum(masks['sf']['sii']), 112)
+    def test_bind_to_figure(self, maps):
+
+        __, __, axes = maps.get_bpt(show_plot=False, return_figure=True)
+
+        assert len(axes) == 4
+
+        for ax in axes:
+            new_fig = ax.bind_to_figure()
+            assert isinstance(new_fig, plt.Figure)
+            assert new_fig.axes[0].get_ylabel() != ''
+
+    def test_kewley_snr_warning(self, maps):
+
+        with pytest.warns(MarvinDeprecationWarning) as record:
+            bpt_kewley06(maps, snr=1, return_figure=False)
+
+        assert len(record) == 1
+        assert record[0].message.args[0] == ('snr is deprecated. Use snr_min instead. '
+                                             'snr will be removed in a future version of marvin')
+
+    def test_wrong_kw(self, maps):
+
+        with pytest.raises(MarvinError) as error:
+            maps.get_bpt(snr=5, return_figure=False, show_plot=False, extra_keyword='hola')
+
+        with pytest.raises(MarvinError) as error2:
+            bpt_kewley06(maps, snr=5, return_figure=False, extra_keyword='hola')
+
+        assert str(error.value) == 'unknown keyword extra_keyword'
+        assert str(error2.value) == 'unknown keyword extra_keyword'
 
 
-if __name__ == '__main__':
-    # set to 1 for the usual '...F..' style output, or 2 for more verbose output.
-    verbosity = 2
-    unittest.main(verbosity=verbosity)
+class TestGetSNR(object):
+
+    def test_get_snr_in_dict(self):
+
+        assert get_snr({'ha': 5, 'hb': 4}, 'ha') == 5
+
+    def test_get_snr_default(self):
+
+        default = inspect.getargspec(get_snr).defaults[0]
+
+        assert get_snr({'ha': 5, 'hb': 4}, 'xx') == default

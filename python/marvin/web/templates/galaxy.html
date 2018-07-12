@@ -11,7 +11,7 @@
     <script rel='preconnect' src="//cdnjs.cloudflare.com/ajax/libs/ol3/3.14.2/ol.min.js"></script>
     <script rel='preconnect' src="https://code.highcharts.com/highcharts.js"></script>
     <script rel='preconnect' src="https://code.highcharts.com/highcharts-more.js"></script>
-    <script src="https://rawgithub.com/highslide-software/draggable-legend/master/draggable-legend.js"></script>
+    <script src="https://cdn.rawgit.com/highcharts/draggable-legend/9c154d4c/draggable-legend.js"></script>
     <script rel='preconnect' src="https://code.highcharts.com/modules/heatmap.js"></script>
     <script rel='preconnect' src="https://code.highcharts.com/modules/exporting.js"></script>
     <script rel='preconnect' src="https://highcharts.github.io/pattern-fill/pattern-fill-v2.js"></script>
@@ -63,7 +63,7 @@
                           </div>
                           <div class='btn-group-vertical'>
                           {{download('#galaxydownload', links)}}
-                          <a href='http://skyserver.sdss.org/dr12/en/tools/chart/navi.aspx?ra={{cubehdr.objra}}&dec={{cubehdr.objdec}}&opt=GS&scale=0.2' class='btn btn-warning' id='gotocas' target='_blank'><i class="fa fa-external-link fa-fw" aria-hidden="true"></i> Go to CAS</a>
+                          <a href='http://skyserver.sdss.org/public/en/tools/chart/navi.aspx?ra={{cubehdr.objra}}&dec={{cubehdr.objdec}}&opt=GS&scale=0.2' class='btn btn-warning' id='gotocas' target='_blank'><i class="fa fa-external-link fa-fw" aria-hidden="true"></i> Go to SkyServer</a>
                           </div>
                     </div>
                     <!-- MaNGA Target Flags -->
@@ -116,8 +116,8 @@
                 <!-- Tabs -->
                 {# Tabs #}
   <ul class="nav nav-pills" role="tablist">
-    <li role="presentation" class="active"><a href="#specview" aria-controls="home" role="tab" data-toggle="tab">MapSpec View</a></li>
-    <li role="presentation"><a id='nsadisp' href="#nsatab" aria-controls="nsadisp" role="tab" data-toggle="tab">NSA Display</a></li>
+    <li role="presentation" class="active"><a id='maptab' href="#specview" aria-controls="home" role="tab" data-toggle="tab">MapSpec View</a></li>
+    <li role="presentation"><a id='nsadisp' href="#nsatab" aria-controls="nsadisp" role="tab" data-toggle="tab">Galaxy Properties</a></li>
   </ul>
 
 <div class='tab-content'>
@@ -163,9 +163,13 @@
                               <div class="form-group col-md-6 col-md-offset-2">
                                 <label for='setdefaults' class='control-label'>DAP Maps:</label>
                                 <div class="input-group">
-                                    <select class="selectpicker" id='dapmapchoices' multiple data-selected-text-format="count" data-live-search="true" data-max-options="6">
+                                    <select class="selectpicker show-tick" id='dapmapchoices' multiple data-selected-text-format="count" data-live-search="true" data-max-options="6" title='No Maps selected'>
                                         {% for dapmap in dapmaps %}
-                                        <option>{{dapmap}}</option>
+                                        {% if dapmap in dapmapselect %}
+                                        <option selected >{{dapmap}}</option>
+                                        {% else %}
+                                        <option >{{dapmap}}</option>
+                                        {% endif %}
                                         {% endfor %}
                                     </select>
                                     <select class="selectpicker show-tick" id='dapbtchoices'>
@@ -282,7 +286,7 @@
 
 <!-- JS Code -->
 {% block code %}
-<script type='text/javascript'>
+<script type='application/javascript'>
     var galaxy = {};
     $(function() {
         var toggleon = {{toggleon|tojson}};

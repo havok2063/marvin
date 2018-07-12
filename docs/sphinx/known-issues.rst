@@ -11,6 +11,9 @@ Known Issues in Marvin
 .. _report new issue: https://github.com/sdss/marvin/issues/new
 
 
+* **Marvin 2.2.1 MPL-6 Maps** - All H-alpha extensions in the Marvin MAPS, using MPL-6, map to NII_6585 extensions instead.  Additionally, the Marvin Maps for SPX_ELLCOO and BIN_LWELLCOO do not include the new channel R/Reff.  It is advisable to upgrade to Marvin 2.2.2, where these bugs have been fixed.
+
+
 FYIs
 ````
 
@@ -21,7 +24,9 @@ Tools
 
 * **Coordinates** - Although we have made significant effort to test them, spaxel selection from coordinates (both indices and spherical) should not be considered science-grade yet. +/- 1 pixel offsets around the real position position are not unexpected, and the behaviour of :func:`~marvin.tools.cube.Cube.getSpaxel()` may not be consistent in all access mode (file vs. API). This is especially true in case of spaxel indices measured from the centre of the cube. When doing science analysis on the data please be careful and, if possible, double check the retrieved values independently. If you find any discrepancy between the values retreived and the ones you expect, please `submit a new Github Issue <https://github.com/sdss/marvin/issues/new>`_.
 
-* **Ivar propagation in ratio maps** - Inverse variation propagation in the ratio maps is set to ``None``.
+* **Ivar propagation for np.log10() of maps** - Inverse variation propagation when appling ``np.log10`` or ``np.log`` to a ``Map`` does not produce correct values.
+
+* **Datamodel propagation for map arithmetic** - The datamodel of a ``Map`` is propagated during map arithmetic operations but is not updated for the resulting ``EnhancedMap``.
 
 * **Queries** - Marvin Queries are currently synchronous.  This means that within one iPython session, you can submit only one query at a time, and it will block your terminal until it responds or times out.
 
@@ -31,10 +36,12 @@ Tools
 
 * **Model Flux** - The ``model_flux`` attribute of :ref:`marvin-tools-spaxel` and :ref:`marvin-tools-bin` is the (binned) observed spectrum that the DAP fit. The ``model`` attribute is the fitted DAP spectrum.
 
+* In auto or local more, if a tools is instantiated from a plate-ifu or mangaid, Marvin will first try to find the appropriate file in the user's local SAS. Note that any modification to the file path in the local SAS will make Marvin fail when trying to find the file. This include un-gzipping the file.
+
 Web
 :::
 
-* **Point-and-Click Model Fits** - On the individual galaxy page, the modelfits shown in the point-and-click display is from the unbinned MODELCUBE FITS files, i.e. SPX-MILESHC.
+* **Point-and-Click Model Fits** - On the individual galaxy page, the modelfits shown in the point-and-click display is from the unbinned MODELCUBE FITS files, i.e. SPX-GAU-MILESHC.
 
 * **Dynamic DAP Maps** - For the DAP map display on the individual galaxy page, you can only choose one binning-template option for all the selected maps.
 
@@ -57,13 +64,12 @@ Here are a list of known bugs:
 Tools
 :::::
 
+* **Marvin 2.2.1 MPL-6 Maps** - All H-alpha extensions in the Marvin MAPS, using MPL-6, map to NII_6585 extensions instead.  Additionally, the Marvin Maps for SPX_ELLCOO and BIN_LWELLCOO do not include the new channel R/Reff.  It is advisable to upgrade to Marvin 2.2.2, where these bugs have been fixed.
+
 * When a Cube is instantiated from a file, the Maps object derived from could be instantiated remotely even if the Maps file is present locally. See `this issue <https://github.com/sdss/marvin/issues/40>`_.
 
 * **Queries** - Marvin Queries work!, but they are sometimes intermittent.  You sometimes may receive this error ``MarvinError: API Query call failed: Requests Http Status Error: 404 Client Error: Not Found for url: https://api.sdss.org/test/marvin2/api/query/cubes/.``  If you do, then just wait a moment, and try your query again.  Sometimes the query succeeds on the server-side and caches your results, but fails when sending it back to you.  We don't yet know why this happens, but we are currently trying to understand this problem!
 
-* **BPT diagrams** - After the release of Marvin 2.1, a bug was found in the calculation of the
-  composite mask in the BPT diagrams. This will be fixed in Marvin 2.1.2 but until that time please
-  do not use the composite mask.
 
 Web
 :::

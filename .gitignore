@@ -1,5 +1,8 @@
 /__pycache__
 bin/__pycache__
+.cache
+.pytest_cache
+flask_profiler.sql
 bin/flask_profiler.sql
 docs/sphinx/_build
 docs/sphinx/flask_profiler.sql
@@ -18,6 +21,7 @@ python/marvin/web/templates/__pycache__
 
 docs/sphinx/_build
 etc/node_modules
+etc/.netrc
 python/marvin/web/lib/.sass-cache
 python/marvin/web/lib/node_modules
 python/marvin/web/static/node_modules
@@ -28,6 +32,7 @@ docs/logs
 docs/sphinx/_static/logs
 docs/sphinx/api/brain/logs
 docs/sphinx/api/logs
+docs/sphinx/exercises/.ipynb_checkpoints
 docs/sphinx/jupyter/.ipynb_checkpoints
 docs/sphinx/flask_profiler.sql
 docs/sphinx/jupyter/.ipynb_checkpoints
@@ -43,6 +48,7 @@ python/marvin/db/logs
 python/marvin/db/sql/logs
 python/marvin/extern/logs
 python/marvin/logs
+python/marvin/tests/.coverage
 python/marvin/tests/api/logs
 python/marvin/tests/db/logs
 python/marvin/tests/logs

@@ -6,6 +6,7 @@
 import sys
 import os
 import math
+import re
 from decimal import *
 from operator import *
 from astropy.io import fits
@@ -19,6 +20,7 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy import select, func  # for aggregate, other functions
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 from sqlalchemy.sql import column
+from sqlalchemy_utils import Timestamp
 from marvin.db.ArrayUtils import ARRAY_D
 from marvin.core.caching_query import RelationshipCache
 import numpy as np
@@ -182,6 +184,9 @@ class Cube(Base, ArrayOps):
     __table_args__ = {'autoload': True, 'schema': 'mangadatadb', 'extend_existing': True}
 
     specres = deferred(Column(ARRAY_D(Float, zero_indexes=True)))
+    specresd = deferred(Column(ARRAY_D(Float, zero_indexes=True)))
+    prespecres = deferred(Column(ARRAY_D(Float, zero_indexes=True)))
+    prespecresd = deferred(Column(ARRAY_D(Float, zero_indexes=True)))
 
     def __repr__(self):
         return '<Cube (pk={0}, plate={1}, ifudesign={2}, tag={3})>'.format(self.pk, self.plate, self.ifu.name, self.pipelineInfo.version.version)
@@ -354,7 +359,7 @@ class Cube(Base, ArrayOps):
         if self.target:
             redshift = self.target.NSA_objects[0].z
             wave = np.array(self.wavelength.wavelength)
-            restwave = wave/(1+redshift)
+            restwave = wave / (1 + redshift)
             return restwave
         else:
             return None
@@ -363,6 +368,32 @@ class Cube(Base, ArrayOps):
     def restwave(cls):
         restw = (func.rest_wavelength(sampledb.NSA.z))
         return restw
+
+    def has_modelspaxels(self, name=None):
+        if not name:
+            name = '(SPX|HYB)'
+        has_ms = False
+        model_cubes = [f.modelcube for f in self.dapfiles if re.search('LOGCUBE-{0}'.format(name), f.filename)]
+        if model_cubes:
+            mc = sum(model_cubes, [])
+            if mc:
+                from marvin.db.models.DapModelClasses import ModelSpaxel
+                session = Session.object_session(mc[0])
+                ms = session.query(ModelSpaxel).filter_by(modelcube_pk=mc[0].pk).first()
+                has_ms = True if ms else False
+        return has_ms
+
+    def has_spaxels(self):
+        if len(self.spaxels) > 0:
+            return True
+        else:
+            return False
+
+    def has_fibers(self):
+        if len(self.fibers) > 0:
+            return True
+        else:
+            return False
 
 
 class Wavelength(Base, ArrayOps):
@@ -382,6 +413,8 @@ class Spaxel(Base, ArrayOps):
     flux = deferred(Column(ARRAY_D(Float, zero_indexes=True)))
     ivar = deferred(Column(ARRAY_D(Float, zero_indexes=True)))
     mask = deferred(Column(ARRAY_D(Integer, zero_indexes=True)))
+    disp = deferred(Column(ARRAY_D(Float, zero_indexes=True)))
+    predisp = deferred(Column(ARRAY_D(Float, zero_indexes=True)))
 
     def __repr__(self):
         return '<Spaxel (pk={0}, x={1}, y={2})'.format(self.pk, self.x, self.y)
@@ -408,6 +441,8 @@ class RssFiber(Base, ArrayOps):
     mask = deferred(Column(ARRAY_D(Integer, zero_indexes=True)))
     xpos = deferred(Column(ARRAY_D(Float, zero_indexes=True)))
     ypos = deferred(Column(ARRAY_D(Float, zero_indexes=True)))
+    disp = deferred(Column(ARRAY_D(Float, zero_indexes=True)))
+    predisp = deferred(Column(ARRAY_D(Float, zero_indexes=True)))
 
     def __repr__(self):
         return '<RssFiber (pk={0})>'.format(self.pk)
@@ -594,6 +629,14 @@ class Wcs(Base, ArrayOps):
         return newhdr
 
 
+class ObsInfo(Base):
+    __tablename__ = 'obsinfo'
+    __table_args__ = {'autoload': True, 'schema': 'mangadatadb'}
+
+    def __repr__(self):
+        return '<ObsInfo (pk={0},cube={1})'.format(self.pk, self.cube)
+
+
 class CubeShape(Base):
     __tablename__ = 'cube_shape'
     __table_args__ = {'autoload': True, 'schema': 'mangadatadb'}
@@ -757,7 +800,18 @@ class MaskBit(Base):
     def __repr__(self):
         return '<MaskBit (pk={0},flag={1}, bit={2}, label={3})'.format(self.pk, self.flag, self.bit, self.label)
 
-# ========================
+
+# ================
+# Query Meta classes
+# ================
+class QueryMeta(Base, Timestamp):
+    __tablename__ = 'query'
+    __table_args__ = {'autoload': True, 'schema': 'history'}
+
+    def __repr__(self):
+        return '<QueryMeta (pk={0}, filter={1}), count={2}>'.format(self.pk, self.searchfilter, self.count)
+
+
 # Define relationships
 # ========================
 
@@ -767,6 +821,8 @@ Cube.ifu = relationship(IFUDesign, backref="cubes")
 Cube.carts = relationship(Cart, secondary=CartToCube.__table__, backref="cubes")
 Cube.wcs = relationship(Wcs, backref='cube', uselist=False)
 Cube.shape = relationship(CubeShape, backref='cubes', uselist=False)
+Cube.obsinfo = relationship(ObsInfo, backref='cube', uselist=False)
+
 # from SampleDB
 Cube.target = relationship(sampledb.MangaTarget, backref='cubes')
 

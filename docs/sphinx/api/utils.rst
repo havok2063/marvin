@@ -18,6 +18,12 @@ BPT Diagrams
 ------------
 
 .. autofunction:: marvin.utils.dap.bpt.bpt_kewley06
+.. autofunction:: marvin.utils.dap.bpt.kewley_sf_nii
+.. autofunction:: marvin.utils.dap.bpt.kewley_sf_sii
+.. autofunction:: marvin.utils.dap.bpt.kewley_sf_oi
+.. autofunction:: marvin.utils.dap.bpt.kewley_comp_nii
+.. autofunction:: marvin.utils.dap.bpt.kewley_agn_sii
+.. autofunction:: marvin.utils.dap.bpt.kewley_agn_oi
 
 
 .. _marvin-utils-general-images:
@@ -35,17 +41,47 @@ Image Utilities
 DAP DataModel Utilities
 -----------------------
 
-.. automodule:: marvin.utils.dap.datamodel
+.. automodule:: marvin.utils.datamodel.dap
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. _marvin-utils-plot:
+.. _marvin-utils-map-plotting:
 
-Plot Colorbar Utilities
------------------------
+Map Plotting Utilities
+----------------------
+
+.. automodule:: marvin.utils.plot.map
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. _marvin-utils-colorbar-plotting:
+
+Colorbar Plotting Utilities
+---------------------------
 
 .. automodule:: marvin.utils.plot.colorbar
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. _marvin-utils-maskbit:
+
+Maskbit Utilities
+-----------------
+
+.. automodule:: marvin.utils.general.maskbit
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. _marvin-utils-scatter-plot:
+
+Scatter/Histogram Plotting Utilities
+------------------------------------
+
+.. automodule:: marvin.utils.plot.scatter
    :members:
    :undoc-members:
    :show-inheritance:

@@ -19,50 +19,54 @@ create schema mangadapdb;
 
 set search_path to mangadapdb;
 
-create table file (pk serial primary key not null, filename text, filepath text, num_ext integer, filetype_pk integer, structure_pk integer, cube_pk integer, pipeline_info_pk integer);
+create table mangadapdb.file (pk serial primary key not null, filename text, filepath text, num_ext integer, filetype_pk integer, structure_pk integer, cube_pk integer, pipeline_info_pk integer);
 
-create table filetype (pk serial primary key not null, value text);
+create table mangadapdb.filetype (pk serial primary key not null, value text);
 
-create table current_default (pk serial primary key not null, filename text, filepath text, file_pk integer);
+create table mangadapdb.current_default (pk serial primary key not null, filename text, filepath text, file_pk integer);
 
-create table hdu (pk serial primary key not null, extname_pk integer, exttype_pk integer, extno integer, file_pk integer);
+create table mangadapdb.hdu (pk serial primary key not null, extname_pk integer, exttype_pk integer, extno integer, file_pk integer);
 
-create table hdu_to_header_value (pk serial primary key not null, hdu_pk integer, header_value_pk integer);
+create table mangadapdb.hdu_to_header_value (pk serial primary key not null, hdu_pk integer, header_value_pk integer);
 
-create table header_value (pk serial primary key not null, value text, index integer, comment text, header_keyword_pk integer);
+create table mangadapdb.header_value (pk serial primary key not null, value text, index integer, comment text, header_keyword_pk integer);
 
-create table header_keyword (pk serial primary key not null, name text);
+create table mangadapdb.header_keyword (pk serial primary key not null, name text);
 
-create table exttype (pk serial primary key not null, name text);
+create table mangadapdb.exttype (pk serial primary key not null, name text);
 
-create table extname (pk serial primary key not null, name text);
+create table mangadapdb.extname (pk serial primary key not null, name text);
 
-create table hdu_to_extcol (pk serial primary key not null, hdu_pk integer, extcol_pk integer);
+create table mangadapdb.hdu_to_extcol (pk serial primary key not null, hdu_pk integer, extcol_pk integer);
 
-create table extcol (pk serial primary key not null, name text);
+create table mangadapdb.extcol (pk serial primary key not null, name text);
 
-create table structure (pk serial primary key not null, binmode_pk integer, bintype_pk integer, template_kin_pk integer, template_pop_pk integer, executionplan_pk integer);
+create table mangadapdb.structure (pk serial primary key not null, binmode_pk integer, bintype_pk integer, template_kin_pk integer, template_pop_pk integer, executionplan_pk integer);
 
-create table binid (pk integer primary key not null, id integer);
+create table mangadapdb.binid (pk integer primary key not null, id integer);
 
-create table executionplan (pk serial primary key not null, id integer, comments text);
+create table mangadapdb.executionplan (pk serial primary key not null, id integer, comments text);
 
-create table template (pk serial primary key not null, name text, id integer);
+create table mangadapdb.template (pk serial primary key not null, name text, id integer);
 
-create table binmode (pk serial primary key not null, name text);
+create table mangadapdb.binmode (pk serial primary key not null, name text);
 
-create table bintype (pk serial primary key not null, name text);
+create table mangadapdb.bintype (pk serial primary key not null, name text);
 
-create table spaxelprop (pk bigserial primary key not null, file_pk integer, spaxel_index integer, binid_pk integer);
+create table mangadapdb.spaxelprop (pk bigserial primary key not null, file_pk integer, spaxel_index integer, binid_pk integer, x integer, y integer);
 
-create table spaxelprop5 (pk bigserial primary key not null, file_pk integer, spaxel_index integer, binid_pk integer);
+create table mangadapdb.spaxelprop5 (pk bigserial primary key not null, file_pk integer, spaxel_index integer, binid_pk integer, x integer, y integer);
 
-create table modelcube (pk serial primary key not null, file_pk integer);
+create table mangadapdb.spaxelprop6 (pk bigserial primary key not null, file_pk integer, spaxel_index integer, binid_pk integer, x integer, y integer);
 
-create table modelspaxel (pk serial primary key not null, flux real[], ivar real[], mask integer[], model real[],
+create table mangadapdb.modelcube (pk serial primary key not null, file_pk integer);
+
+create table mangadapdb.modelspaxel (pk serial primary key not null, flux real[], ivar real[], mask integer[], model real[],
     emline double precision[], emline_base real[], emline_mask integer[], x integer, y integer, modelcube_pk integer);
 
-create table redcorr (pk serial primary key not null, value numeric[], modelcube_pk integer);
+create table mangadapdb.redcorr (pk serial primary key not null, value double precision[], modelcube_pk integer);
+
+create table mangadapdb.dapall (pk serial primary key not null, file_pk integer);
 
 ALTER TABLE ONLY mangadapdb.file
     ADD CONSTRAINT cube_fk
@@ -189,6 +193,20 @@ ALTER TABLE ONLY mangadapdb.spaxelprop5
     FOREIGN KEY (binid_pk) REFERENCES mangadapdb.binid(pk)
     ON UPDATE CASCADE ON DELETE CASCADE;
 
+ALTER TABLE ONLY mangadapdb.spaxelprop6
+    ADD CONSTRAINT file_fk
+    FOREIGN KEY (file_pk) REFERENCES mangadapdb.file(pk)
+    ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY mangadapdb.spaxelprop6
+    ADD CONSTRAINT binid_fk
+    FOREIGN KEY (binid_pk) REFERENCES mangadapdb.binid(pk)
+    ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY mangadapdb.dapall
+    ADD CONSTRAINT file_fk
+    FOREIGN KEY (file_pk) REFERENCES mangadapdb.file(pk)
+    ON UPDATE CASCADE ON DELETE CASCADE;
 
 CREATE INDEX CONCURRENTLY cube_pk_idx ON mangadapdb.file using BTREE(cube_pk);
 CREATE INDEX CONCURRENTLY pipeline_info_pk_idx ON mangadapdb.file using BTREE(pipeline_info_pk);
@@ -210,17 +228,6 @@ CREATE INDEX CONCURRENTLY emline_gflux_sii_idx ON mangadapdb.spaxelprop using BT
 CREATE INDEX CONCURRENTLY emline_gflux_oii_idx ON mangadapdb.spaxelprop using BTREE(emline_gflux_oiid_3728);
 CREATE INDEX CONCURRENTLY emline_gflux_nii_idx ON mangadapdb.spaxelprop using BTREE(emline_gflux_nii_6585);
 
-CREATE INDEX CONCURRENTLY clean_binid_idx ON mangadapdb.cleanspaxelprop using BTREE(binid);
-CREATE INDEX CONCURRENTLY clean_file_pk_idx ON mangadapdb.cleanspaxelprop using BTREE(file_pk);
-CREATE INDEX CONCURRENTLY clean_spaxel_index_idx ON mangadapdb.cleanspaxelprop using BTREE(spaxel_index);
-CREATE INDEX CONCURRENTLY clean_emline_gflux_ha_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_gflux_ha_6564);
-CREATE INDEX CONCURRENTLY clean_emline_gflux_hb_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_gflux_hb_4862);
-CREATE INDEX CONCURRENTLY clean_emline_gflux_oiii_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_gflux_oiii_5008);
-CREATE INDEX CONCURRENTLY clean_emline_gflux_sii_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_gflux_sii_6718);
-CREATE INDEX CONCURRENTLY clean_emline_gflux_oii_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_gflux_oiid_3728);
-CREATE INDEX CONCURRENTLY clean_emline_gflux_nii_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_gflux_nii_6585);
-CREATE INDEX CONCURRENTLY clean_emline_ew_ha_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_ew_ha_6564);
-
 CREATE INDEX CONCURRENTLY binid5_idx ON mangadapdb.spaxelprop5 using BTREE(binid);
 CREATE INDEX CONCURRENTLY file5_pk_idx ON mangadapdb.spaxelprop5 using BTREE(file_pk);
 CREATE INDEX CONCURRENTLY spaxel5_index_idx ON mangadapdb.spaxelprop5 using BTREE(spaxel_index);
@@ -231,17 +238,15 @@ CREATE INDEX CONCURRENTLY emline5_gflux_sii_idx ON mangadapdb.spaxelprop5 using 
 CREATE INDEX CONCURRENTLY emline5_gflux_oii_idx ON mangadapdb.spaxelprop5 using BTREE(emline_gflux_oiid_3728);
 CREATE INDEX CONCURRENTLY emline5_gflux_nii_idx ON mangadapdb.spaxelprop5 using BTREE(emline_gflux_nii_6585);
 
-CREATE INDEX CONCURRENTLY clean_binid5_pk_idx ON mangadapdb.cleanspaxelprop5 using BTREE(binid);
-CREATE INDEX CONCURRENTLY clean_file5_pk_idx ON mangadapdb.cleanspaxelprop5 using BTREE(file_pk);
-CREATE INDEX CONCURRENTLY clean_spaxel5_index_idx ON mangadapdb.cleanspaxelprop5 using BTREE(spaxel_index);
-CREATE INDEX CONCURRENTLY clean_emline5_gflux_ha_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_ha_6564);
-CREATE INDEX CONCURRENTLY clean_emline5_gflux_hb_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_hb_4862);
-CREATE INDEX CONCURRENTLY clean_emline5_gflux_oiii_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_oiii_5008);
-CREATE INDEX CONCURRENTLY clean_emline5_gflux_sii_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_sii_6718);
-CREATE INDEX CONCURRENTLY clean_emline5_gflux_oii_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_oiid_3728);
-CREATE INDEX CONCURRENTLY clean_emline5_gflux_nii_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_nii_6585);
-CREATE INDEX CONCURRENTLY clean_stvel5_idx ON mangadapdb.cleanspaxelprop5 using BTREE(stellar_vel);
-CREATE INDEX CONCURRENTLY clean_d40005_idx ON mangadapdb.cleanspaxelprop5 using BTREE(specindex_d4000);
+CREATE INDEX CONCURRENTLY binid6_idx ON mangadapdb.spaxelprop6 using BTREE(binid);
+CREATE INDEX CONCURRENTLY file6_pk_idx ON mangadapdb.spaxelprop6 using BTREE(file_pk);
+CREATE INDEX CONCURRENTLY spaxel6_index_idx ON mangadapdb.spaxelprop6 using BTREE(spaxel_index);
+CREATE INDEX CONCURRENTLY emline6_gflux_ha_idx ON mangadapdb.spaxelprop6 using BTREE(emline_gflux_ha_6564);
+CREATE INDEX CONCURRENTLY emline6_gflux_hb_idx ON mangadapdb.spaxelprop6 using BTREE(emline_gflux_hb_4862);
+CREATE INDEX CONCURRENTLY emline6_gflux_oiii_idx ON mangadapdb.spaxelprop6 using BTREE(emline_gflux_oiii_5008);
+CREATE INDEX CONCURRENTLY emline6_gflux_sii_idx ON mangadapdb.spaxelprop6 using BTREE(emline_gflux_sii_6718);
+CREATE INDEX CONCURRENTLY emline6_gflux_oii_idx ON mangadapdb.spaxelprop6 using BTREE(emline_gflux_oiid_3728);
+CREATE INDEX CONCURRENTLY emline6_gflux_nii_idx ON mangadapdb.spaxelprop6 using BTREE(emline_gflux_nii_6585);
 
 CREATE INDEX CONCURRENTLY mc_file_pk_idx ON mangadapdb.modelcube using BTREE(file_pk);
 CREATE INDEX CONCURRENTLY rc_mc_pk_idx ON mangadapdb.redcorr using BTREE(modelcube_pk);
@@ -249,4 +254,91 @@ CREATE INDEX CONCURRENTLY mc_pk_idx ON mangadapdb.modelspaxel using BTREE(modelc
 CREATE INDEX CONCURRENTLY ms_x_idx ON mangadapdb.modelspaxel using BTREE(x);
 CREATE INDEX CONCURRENTLY ms_y_idx ON mangadapdb.modelspaxel using BTREE(y);
 
+CREATE INDEX CONCURRENTLY dapall_file_pk_idx ON mangadapdb.dapall using BTREE(file_pk);
+
+# CleanSpaxelProp after the initial load of SpaxelProp.  Run these only after populating the spaxeprop tables with
+# the new columns and data for each MPL.
+#
+-- # MPL-4
+-- create table mangadapdb.cleanspaxelprop as select s.* from mangadapdb.spaxelprop as s where s.binid != -1;
+-- alter table mangadapdb.cleanspaxelprop add constraint file_fk foreign key (file_pk) references mangadapdb.file(pk);
+
+-- CREATE INDEX CONCURRENTLY clean_binid_idx ON mangadapdb.cleanspaxelprop using BTREE(binid);
+-- CREATE INDEX CONCURRENTLY clean_file_pk_idx ON mangadapdb.cleanspaxelprop using BTREE(file_pk);
+-- CREATE INDEX CONCURRENTLY clean_spaxel_index_idx ON mangadapdb.cleanspaxelprop using BTREE(spaxel_index);
+-- CREATE INDEX CONCURRENTLY clean_emline_gflux_ha_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_gflux_ha_6564);
+-- CREATE INDEX CONCURRENTLY clean_emline_gflux_hb_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_gflux_hb_4862);
+-- CREATE INDEX CONCURRENTLY clean_emline_gflux_oiii_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_gflux_oiii_5008);
+-- CREATE INDEX CONCURRENTLY clean_emline_gflux_sii_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_gflux_sii_6718);
+-- CREATE INDEX CONCURRENTLY clean_emline_gflux_oii_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_gflux_oiid_3728);
+-- CREATE INDEX CONCURRENTLY clean_emline_gflux_nii_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_gflux_nii_6585);
+-- CREATE INDEX CONCURRENTLY clean_emline_ew_ha_idx ON mangadapdb.cleanspaxelprop using BTREE(emline_ew_ha_6564);
+
+-- # MPL-5
+-- create table mangadapdb.cleanspaxelprop5 as select s.* from mangadapdb.spaxelprop5 as s where s.binid != -1;
+-- alter table mangadapdb.cleanspaxelprop5 add constraint file_fk foreign key (file_pk) references mangadapdb.file(pk);
+
+-- CREATE INDEX CONCURRENTLY clean_binid5_pk_idx ON mangadapdb.cleanspaxelprop5 using BTREE(binid);
+-- CREATE INDEX CONCURRENTLY clean_file5_pk_idx ON mangadapdb.cleanspaxelprop5 using BTREE(file_pk);
+-- CREATE INDEX CONCURRENTLY clean_spaxel5_index_idx ON mangadapdb.cleanspaxelprop5 using BTREE(spaxel_index);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_ha_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_ha_6564);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_hb_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_hb_4862);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_oiii_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_oiii_5008);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_sii_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_sii_6718);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_oii_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_oiid_3728);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_nii_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_nii_6585);
+-- CREATE INDEX CONCURRENTLY clean_stvel5_idx ON mangadapdb.cleanspaxelprop5 using BTREE(stellar_vel);
+-- CREATE INDEX CONCURRENTLY clean_d40005_idx ON mangadapdb.cleanspaxelprop5 using BTREE(specindex_d4000);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_oi_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_oi_6302);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_siia_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_sii_6732);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_ivar_ha_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_ivar_ha_6564);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_ivar_hb_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_ivar_hb_4862);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_ivar_oiii_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_ivar_oiii_5008);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_ivar_sii_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_ivar_sii_6718);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_ivar_oiid_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_ivar_oiid_3728);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_ivar_nii_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_ivar_nii_6585);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_ivar_oi_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_ivar_oi_6302);
+-- CREATE INDEX CONCURRENTLY clean_emline5_gflux_ivar_siia_idx ON mangadapdb.cleanspaxelprop5 using BTREE(emline_gflux_ivar_sii_6732);
+
+
+-- # MPL-6
+
+-- create table mangadapdb.cleanspaxelprop6 as select s.* from mangadapdb.spaxelprop6 as s
+--     where (s.binid_binned_spectra != -1 and s.binid_stellar_continua != -1 and s.binid_spectral_indices != -1
+--         and s.binid_em_line_moments != -1 and s.binid_em_line_models != -1);
+-- alter table mangadapdb.cleanspaxelprop6 add constraint file_fk foreign key (file_pk) references mangadapdb.file(pk);
+
+-- CREATE INDEX CONCURRENTLY clean_binid6_pk_idx ON mangadapdb.cleanspaxelprop6 using BTREE(binid);
+-- CREATE INDEX CONCURRENTLY clean_file6_pk_idx ON mangadapdb.cleanspaxelprop6 using BTREE(file_pk);
+-- CREATE INDEX CONCURRENTLY clean_spaxel6_index_idx ON mangadapdb.cleanspaxelprop6 using BTREE(spaxel_index);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_ha_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_ha_6564);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_hb_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_hb_4862);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_oiii_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_oiii_5008);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_sii_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_sii_6718);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_oii_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_oii_3727);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_oiia_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_oii_3729);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_nii_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_nii_6585);
+-- CREATE INDEX CONCURRENTLY clean_stvel6_idx ON mangadapdb.cleanspaxelprop6 using BTREE(stellar_vel);
+-- CREATE INDEX CONCURRENTLY clean_d40006_idx ON mangadapdb.cleanspaxelprop6 using BTREE(specindex_d4000);
+
+-- CREATE INDEX CONCURRENTLY clean_stsig6_idx ON mangadapdb.cleanspaxelprop6 using BTREE(stellar_sigma);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gew_ha_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gew_ha_6564);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gew_hb_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gew_hb_4862);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gew_oiii_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gew_oiii_5008);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gew_sii_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gew_sii_6718);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gew_oii_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gew_oii_3727);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gew_oiia_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gew_oii_3729);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gew_nii_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gew_nii_6585);
+
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_oi_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_oi_6302);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_siia_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_sii_6732);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_ivar_ha_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_ivar_ha_6564);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_ivar_hb_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_ivar_hb_4862);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_ivar_oiii_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_ivar_oiii_5008);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_ivar_sii_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_ivar_sii_6718);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_ivar_oii_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_ivar_oii_3727);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_ivar_oiia_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_ivar_oii_3729);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_ivar_nii_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_ivar_nii_6585);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_ivar_oi_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_ivar_oi_6302);
+-- CREATE INDEX CONCURRENTLY clean_emline6_gflux_ivar_siia_idx ON mangadapdb.cleanspaxelprop6 using BTREE(emline_gflux_ivar_sii_6732);
 

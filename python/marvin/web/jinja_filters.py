@@ -25,6 +25,14 @@ jinjablue = flask.Blueprint('jinja_filters', __name__)
 
 @jinja2.contextfilter
 @jinjablue.app_template_filter()
+def make_token(context, value, group):
+    ''' Make a keyword string for query parameter dropdown live search '''
+    tokstring = ', '.join([group, value._joinedname])
+    return tokstring
+
+
+@jinja2.contextfilter
+@jinjablue.app_template_filter()
 def filtergaltype(context, value):
     ''' Parse plateifu or mangaid into better form '''
     if value == 'plateifu':
@@ -38,9 +46,9 @@ def filtergaltype(context, value):
 def filternsa(context, value):
     ''' Parse plateifu or mangaid into better form '''
 
-    newvalue = value.replace('elpetro_mag_g_r', 'g-r').\
-        replace('elpetro_mag_u_r', 'u-r').\
-        replace('elpetro_mag_i_z', 'i-z')
+    newvalue = value.replace('elpetro_absmag_g_r', 'Abs. g-r').\
+        replace('elpetro_absmag_u_r', 'Abs. u-r').\
+        replace('elpetro_absmag_i_z', 'Abs. i-z')
     return newvalue
 
 
@@ -107,4 +115,3 @@ def split(context, value, delim=None):
     if not delim:
         delim = ' '
     return value.split(delim) if value else None
-

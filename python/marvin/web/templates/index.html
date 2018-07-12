@@ -25,11 +25,11 @@
                             <li>
                                 <a class="btn btn-default btn-lg" onclick='m.utils.scrollTo("#about")'><i class="fa fa-info fa-fw" aria-hidden="true"></i> <span class="network-name">About</span></a>
                             </li>
-                            <li>
+                            <li id='image_link'>
                                 <a href="{{url_for('images_page.Random:index')}}" class="btn btn-default btn-lg"><i class="fa fa-camera-retro fa-fw" aria-hidden="true"></i> <span class="network-name">Image Roulette</span></a>
                             </li>
                             <li>
-                                <a href="https://api.sdss.org/doc/manga/marvin/" target='_blank' class="btn btn-default btn-lg"><i class="fa fa-question-circle-o fa-fw" aria-hidden="true"></i> <span class="network-name">Help</span></a>
+                                <a href="http://sdss-marvin.readthedocs.io/en/stable/" target='_blank' class="btn btn-default btn-lg"><i class="fa fa-question-circle-o fa-fw" aria-hidden="true"></i> <span class="network-name">Help</span></a>
                             </li>
                         </ul>
                     </div>
@@ -53,18 +53,18 @@
                 </div>
             </div>
             <div class="row text-center">
-                <a href='https://api.sdss.org/doc/manga/marvin/web.html' target='_blank'>
+                <a href='http://sdss-marvin.readthedocs.io/en/stable/web.html' target='_blank'>
                 <div class="col-md-4">
                     <span class="fa-stack fa-4x">
                         <i class="fa fa-circle fa-stack-2x text-primary" aria-hidden="true"></i>
                         <i class="fa fa-desktop fa-stack-1x fa-inverse" aria-hidden="true"></i>
                     </span>
                     <h4 class="service-heading">Web</h4>
-                    <p class="text-muted">Newly redesigned to be sleak, simple, and sexy. The Web is your front-end experience to search,
+                    <p class="text-muted">Newly redesigned to be sleek, simple, and intuitive. The Web is your front-end experience to search,
                     explore, and visualize the MaNGA dataset.</p>
                 </div>
                 </a>
-                <a href='https://api.sdss.org/doc/manga/marvin/api.html' target='_blank'>
+                <a href='http://sdss-marvin.readthedocs.io/en/stable/api.html' target='_blank'>
                 <div class="col-md-4">
                     <span class="fa-stack fa-4x">
                         <i class="fa fa-circle fa-stack-2x text-primary" aria-hidden="true"></i>
@@ -74,14 +74,14 @@
                     <p class="text-muted">Brings the specfic data you want directly to you.  The API allows you to access the data remotely and integrate it directly into workflow scripts. </p>
                 </div>
                 </a>
-                <a href='https://api.sdss.org/doc/manga/marvin/tools.html' target='_blank'>
+                <a href='http://sdss-marvin.readthedocs.io/en/stable/tools.html' target='_blank'>
                 <div class="col-md-4">
                     <span class="fa-stack fa-4x">
                         <i class="fa fa-circle fa-stack-2x text-primary" aria-hidden="true"></i>
                         <i class="fa fa-gavel fa-stack-1x fa-inverse" aria-hidden="true"></i>
                     </span>
                     <h4 class="service-heading">Tools</h4>
-                    <p class="text-muted">A complete Python suite of tools designed to give you complete progammatic
+                    <p class="text-muted">An extensive Python suite of tools designed to give you complete progammatic
                     control over the MaNGA dataset in a convienent way. </p>
                 </div>
                 </a>
@@ -170,7 +170,7 @@
 
 <!-- JS Code -->
 {% block code %}
-<script type='text/javascript'>
+<script type='application/javascript'>
     $(function() {
         m.header.initTypeahead('#mainform .typeahead', '#mainform');
     });

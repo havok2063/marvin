@@ -9,7 +9,17 @@ Marvin Query Reference
 Query
 -----
 
-.. automodule:: marvin.tools.query.query
+.. automodule:: marvin.tools.query
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. _marvin-queryutils-ref:
+
+Query Utils
+-----------
+
+.. automodule:: marvin.utils.datamodel.query.base
    :members:
    :undoc-members:
    :show-inheritance:
@@ -19,7 +29,7 @@ Query
 Results
 -------
 
-.. automodule:: marvin.tools.query.results
+.. automodule:: marvin.tools.results
    :members:
    :undoc-members:
    :show-inheritance:

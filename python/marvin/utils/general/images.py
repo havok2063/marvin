@@ -84,10 +84,10 @@ def getDir3d(inputid, mode=None, release=None):
     if drpstrict >= verstrict:
         from marvin.tools.plate import Plate
         try:
-            plate = Plate(plateid=plateid, nocubes=True, mode=mode, release=release)
+            plate = Plate(plate=plateid, nocubes=True, mode=mode, release=release)
         except Exception as e:
-            raise MarvinError('Could not retrieve a remote plate.  If it is a mastar \
-                plate you are after, Marvin currently does not handle those: {0}'.format(e))
+            raise MarvinError('Could not retrieve a remote plate.  If it is a mastar '
+                              'plate you are after, Marvin currently does not handle those: {0}'.format(e))
         else:
             dir3d = plate.dir3d
     else:
@@ -141,14 +141,14 @@ def getRandomImages(num=10, download=False, mode=None, as_url=None, verbose=None
 
     # if mode is auto, set it to remote:
     if mode == 'auto':
-        warnings.warn('Mode is auto.  Defaulting to remote.  If you want to access your \
-            local images, set the mode explicitly to local', MarvinUserWarning)
+        warnings.warn('Mode is auto.  Defaulting to remote.  If you want to access your '
+                      'local images, set the mode explicitly to local', MarvinUserWarning)
         mode = 'remote'
 
     # do a local or remote thing
     if mode == 'local':
         full = rsync_access.full('mangaimage', plate='*', drpver=drpver, ifu='*', dir3d='stack')
-        listofimages = rsync_access.random('', full=full, num=num, refine='\d{4,5}.png', as_url=as_url)
+        listofimages = rsync_access.random('', full=full, num=num, refine=r'\d{4,5}.png', as_url=as_url)
 
         # if download, issue warning that cannot do it
         if download:
@@ -164,7 +164,7 @@ def getRandomImages(num=10, download=False, mode=None, as_url=None, verbose=None
             raise MarvinError('Error with sdss_access rsync.set_stream. AccessError: {0}'.format(e))
 
         # refine and randomize
-        rsync_access.refine_task('\d{4,5}.png')
+        rsync_access.refine_task(r'\d{4,5}.png')
         rsync_access.shuffle()
         listofimages = rsync_access.get_urls(limit=num) if as_url else rsync_access.get_paths(limit=num)
 
@@ -225,8 +225,8 @@ def getImagesByPlate(plateid, download=False, mode=None, as_url=None, verbose=No
 
     # if mode is auto, set it to remote:
     if mode == 'auto':
-        warnings.warn('Mode is auto.  Defaulting to remote.  If you want to access your \
-            local images, set the mode explicitly to local', MarvinUserWarning)
+        warnings.warn('Mode is auto.  Defaulting to remote.  If you want to access your '
+                      'local images, set the mode explicitly to local', MarvinUserWarning)
         mode = 'remote'
 
     # do a local or remote thing
@@ -297,7 +297,7 @@ def getImagesByList(inputlist, download=False, mode=None, as_url=None, verbose=N
 
     '''
     # Check inputs
-    assert type(inputlist) == list or type(inputlist) == np.ndarray, 'Input must be of type list or Numpy array'
+    assert isinstance(inputlist, (list, np.ndarray)), 'Input must be of type list or Numpy array'
     idtype = parseIdentifier(inputlist[0])
     assert idtype in ['plateifu', 'mangaid'], 'Input must be of type plate-ifu or mangaid'
     # mode is checked via decorator
@@ -320,8 +320,8 @@ def getImagesByList(inputlist, download=False, mode=None, as_url=None, verbose=N
 
     # if mode is auto, set it to remote:
     if mode == 'auto':
-        warnings.warn('Mode is auto.  Defaulting to remote.  If you want to access your \
-            local images, set the mode explicitly to local', MarvinUserWarning)
+        warnings.warn('Mode is auto.  Defaulting to remote.  If you want to access your '
+                      'local images, set the mode explicitly to local', MarvinUserWarning)
         mode = 'remote'
 
     # do a local or remote thing
@@ -426,9 +426,9 @@ def showImage(path=None, plateifu=None, release=None, return_image=True, show_im
             filepath = filepath[0]
             return filepath
         else:
-            raise MarvinError('Error: No files found locally to match plateifu {0}.  \
-                Use one of the image utility functions to download them first or \
-                switch to remote mode'.format(plateifu))
+            raise MarvinError('Error: No files found locally to match plateifu {0}. '
+                              'Use one of the image utility functions to download them first or '
+                              'switch to remote mode'.format(plateifu))
 
     def _do_remote_plateifu():
         filepath = http_access.url('mangaimage', plate=plateid, drpver=drpver, ifu=ifu, dir3d='stack')

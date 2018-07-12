@@ -1,377 +1,397 @@
-#!/usr/bin/env python
+# !usr/bin/env python2
+# -*- coding: utf-8 -*-
+#
+# Licensed under a 3-clause BSD license.
+#
+# @Author: Brian Cherinka
+# @Date:   2017-06-12 18:18:54
+# @Last modified by:   Brian Cherinka
+# @Last modified time: 2017-07-31 12:07:88
 
 from __future__ import print_function, division, absolute_import
-import unittest
-import os
-from marvin import config
-from marvin.tools.query import Query, Results
-from marvin.core.exceptions import MarvinError
-from marvin.api.api import Interaction
-from collections import OrderedDict, namedtuple
+from marvin.tools.query import Query
+from marvin.tools.results import Results, ResultSet, marvintuple
 from marvin.tools.cube import Cube
 from marvin.tools.maps import Maps
+from marvin.tools.spaxel import Spaxel
 from marvin.tools.modelcube import ModelCube
-from marvin.tests import MarvinTest, skipIfNoBrian
+from marvin.utils.datamodel.query.base import ParameterGroup, query_params
+from marvin import config
+from marvin.core.exceptions import MarvinError
+from collections import OrderedDict, namedtuple
+import pytest
+import copy
+import six
+import pandas as pd
+import json
 
 
-class TestResultsBase(MarvinTest):
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestResultsBase, cls).setUpClass()
-
-    @classmethod
-    def tearDownClass(cls):
-        pass
-
-    def setUp(self):
-        self._reset_the_config()
-        self.set_sasurl('local', port=5000)
-        self.mode = self.init_mode
-        config.setMPL('MPL-5')
-        config.forceDbOn()
-
-        self.filter = 'nsa.z < 0.1 and cube.plate==8485'
-        self.columns = ['cube.mangaid', 'cube.plate', 'cube.plateifu', 'ifu.name', 'nsa.z']
-        self.remotecols = [u'mangaid', u'plate', u'plateifu', u'name', u'z']
-        self.coltoparam = OrderedDict([('mangaid', 'cube.mangaid'),
-                                       ('plate', 'cube.plate'),
-                                       ('plateifu', 'cube.plateifu'),
-                                       ('name', 'ifu.name'),
-                                       ('z', 'nsa.z')])
-        self.paramtocol = OrderedDict([('cube.mangaid', 'mangaid'),
-                                       ('cube.plate', 'plate'),
-                                       ('cube.plateifu', 'plateifu'),
-                                       ('ifu.name', 'name'),
-                                       ('nsa.z', 'z')])
-
-        self.res = (u'1-209232', 8485, u'8485-1901', u'1901', 0.0407447)
-
-        self.resdict = {'1': (u'1-43148', 8135, u'8135-6101', u'6101', 0.0108501),
-                        '10': (u'1-167079', 8459, u'8459-1901', u'1901', 0.015711),
-                        '11': (u'1-167075', 8459, u'8459-12704', u'12704', 0.0158584),
-                        '21': (u'1-113567', 7815, u'7815-12701', u'12701', 0.0167432),
-                        '31': (u'1-322048', 8552, u'8552-12705', u'12705', 0.0172298),
-                        '36': (u'1-252151', 8335, u'8335-9102', u'9102', 0.0174864),
-                        '41': (u'1-378182', 8134, u'8134-12705', u'12705', 0.0178659),
-                        '46': (u'1-252126', 8335, u'8335-3703', u'3703', 0.0181555)}
-
-        self.q = Query(searchfilter=self.filter, mode=self.mode)
-
-    def tearDown(self):
-        pass
-
-    def _set_remote(self, mode='local', limit=100):
-        self.mode = 'remote'
-        self.q = Query(searchfilter=self.filter, mode='remote', limit=limit)
-
-    def _run_query(self):
-        r = self.q.run()
-        r.sort('z', order='desc')
-        plateifu = r.getListOf('plateifu')
-        index = plateifu.index(self.plateifu)
-        newres = r.results[index]
-        self.assertEqual(self.res, newres)
-        return r
+myplateifu = '8485-1901'
+cols = ['cube.mangaid', 'cube.plate', 'cube.plateifu', 'ifu.name', 'nsa.z']
+remotecols = [u'mangaid', u'plate', u'plateifu', u'ifu_name', u'z']
 
 
-class TestResults(TestResultsBase):
+@pytest.fixture()
+def limits(results):
+    data = results.expdata['queries'][results.searchfilter]
+    count = 10 if data['count'] >= 10 else data['count']
+    return (10, count)
 
-    def _check_cols(self, mode='local'):
-        r = self._run_query()
-        if mode == 'local':
-            self.assertEqual(r.columns, self.columns)
-        elif mode == 'remote':
-            self.assertEqual(r.columns, self.remotecols)
-        self.assertEqual(r.coltoparam, self.coltoparam)
-        self.assertEqual(r.paramtocol, self.paramtocol)
 
-    def test_columns_local(self):
-        self._check_cols()
+@pytest.fixture()
+def results(query, request):
+    searchfilter = request.param if hasattr(request, 'param') else 'nsa.z < 0.1 and cube.plate==8485'
+    q = Query(searchfilter=searchfilter, mode=query.mode, limit=10, release=query._release)
+    r = q.run()
+    r.expdata = query.expdata
+    yield r
+    r = None
 
-    def test_columns_remote(self):
-        self._set_remote()
-        self._check_cols(mode='remote')
 
-    def _getattribute(self, mode='local'):
-        r = self._run_query()
-        res = r.results[0]
+@pytest.fixture()
+def columns(results):
+    ''' returns the local or remote column syntax '''
+    return ParameterGroup('Columns', cols)
 
-        cols = self.columns if mode == 'local' else self.remotecols
-        for i, name in enumerate(cols):
-            self.assertEqual(self.res[i], res.__getattribute__(name))
 
-    def test_res_getattribute_local(self):
-        self._getattribute()
+class TestResultsColumns(object):
 
-    def test_res_getattribute_remote(self):
-        self._set_remote()
-        self._getattribute(mode='remote')
+    def test_check_cols(self, results, columns):
+        assert results.columns.full == columns.full
+        assert results.columns.remote == columns.remote
 
-    def _refname(self, mode='local'):
-        r = self._run_query()
-        cols = self.columns if mode == 'local' else self.remotecols
-        for i, expname in enumerate(cols):
-            self.assertEqual(expname, r._getRefName(self.columns[i]))
-            self.assertEqual(expname, r._getRefName(self.remotecols[i]))
+    @pytest.mark.parametrize('col, errmsg', [('plate', 'plate is too ambiguous.  Did you mean one of')])
+    def test_fail(self, results, col, errmsg):
+        with pytest.raises(KeyError) as cm:
+            col in results.columns
+        assert cm.type == KeyError
+        assert errmsg in str(cm.value)
 
-    def test_refname_local(self):
-        self._refname()
+    @pytest.mark.parametrize('results', [('nsa.z < 0.1 and haflux > 25')], indirect=True)
+    @pytest.mark.parametrize('colmns, pars', [(['spaxelprop.x', 'spaxelprop.y', 'emline_gflux_ha_6564', 'bintype.name', 'template.name'],
+                                               ['x', 'y', 'emline_gflux_ha_6564', 'bintype_name', 'template_name'])])
+    def test_check_withadded(self, results, colmns, pars, columns):
+        newcols = cols + colmns
+        assert set(results._params) == set(newcols)
 
-    def test_refname_remote(self):
-        self._set_remote()
-        self._refname(mode='remote')
+        newcols = copy.copy(columns)
+        newcols.extend(ParameterGroup('Columns', colmns))
+        assert set(results.columns.full) == set(newcols.full)
+        assert set(results.columns.remote) == set(newcols.remote)
 
-    def _get_list(self, name):
-        r = self._run_query()
-        obj = r.getListOf(name)
-        self.assertIsNotNone(obj)
-        self.assertEqual(list, type(obj))
+    @pytest.mark.parametrize('results', [('nsa.z < 0.1 and haflux > 25')], indirect=True)
+    @pytest.mark.parametrize('full, name', [('nsa.z', 'z'), ('cube.plateifu', 'plateifu'),
+                                            ('cube.mangaid', 'mangaid'),
+                                            ('spaxelprop.emline_gflux_ha_6564', 'haflux')])
+    def test_colnames(self, results, full, name):
+        cols = results.columns
+        assert full in cols
+        assert name in cols
+        col = cols[name]
+        assert col.full == full
 
-    def test_getList_local(self):
-        for i, col in enumerate(self.columns):
-            self._get_list(col)
-            self._get_list(self.remotecols[i])
 
-    def test_getList_remote(self):
-        self._set_remote()
-        for i, col in enumerate(self.columns):
-            self._get_list(col)
-            self._get_list(self.remotecols[i])
+class TestMarvinTuple(object):
 
-    def _get_dict(self, name=None, ftype='listdict'):
-        r = self._run_query()
-        # get output
-        if name is not None:
-            output = r.getDictOf(name, format_type=ftype)
-        else:
-            output = r.getDictOf(format_type=ftype)
+    def test_create(self, results):
+        data = results.results[0].__dict__
+        mt = marvintuple('ResultRow', data.keys())
+        assert mt is not None
+        assert hasattr(mt, 'mangaid')
+        assert hasattr(mt, 'plateifu')
 
-        # test output
+        row = mt(**data)
+        assert row.plate == data['plate']
+        assert row.mangaid == data['mangaid']
+        assert row.plateifu == data['plateifu']
+
+    def test_add(self, results):
+        data = results.results[0].__dict__
+        mt = marvintuple('ResultRow', 'mangaid, plate, plateifu, ifu_name')
+        mt1 = marvintuple('ResultRow', 'z')
+
+        row = mt(**{k: v for k, v in data.items() if k in ['mangaid', 'plate', 'plateifu', 'ifu_name']})
+        row1 = mt1(**{k: v for k, v in data.items()})
+        new_row = row + row1
+        assert new_row is not None
+        cols = ['mangaid', 'plate', 'plateifu', 'z']
+        assert set(cols).issubset(set(new_row.__dict__.keys()))
+        assert row.__dict__ <= new_row.__dict__
+
+
+class TestResultSet(object):
+
+    def test_list(self, results):
+        reslist = results.results.to_list()
+        assert isinstance(reslist, list)
+
+    @pytest.mark.parametrize('results', [('nsa.z < 0.1')], indirect=True)
+    def test_sort(self, results):
+        redshift = results.expdata['queries']['nsa.z < 0.1']['sorted']['1'][-1]
+        results.getAll()
+        results.results.sort('z')
+        assert results.results['z'][0] == redshift
+
+    def test_add(self, results):
+        res = results.results
+        res1 = res
+        newres = res + res1
+        newres1 = res1 + res
+        assert res.columns.full == newres.columns.full
+        assert newres == newres1
+
+
+class TestResultsMisc(object):
+
+    def test_showQuery(self, results):
+        x = results.showQuery()
+        assert isinstance(x, six.string_types)
+
+
+class TestResultsOutput(object):
+
+    def test_tofits(self, results, temp_scratch):
+        file = temp_scratch.join('test_results.fits')
+        results.toFits(filename=str(file), overwrite=True)
+        assert file.check(file=1, exists=1) is True
+
+    def test_tocsv(self, results, temp_scratch):
+        file = temp_scratch.join('test_results.csv')
+        results.toCSV(filename=str(file), overwrite=True)
+        assert file.check(file=1, exists=1) is True
+
+    def test_topandas(self, results):
+        df = results.toDF()
+        assert isinstance(df, pd.core.frame.DataFrame)
+
+    def test_tojson(self, results):
+        res = results.toJson()
+        assert isinstance(res, six.string_types)
+        json_res = json.loads(res)
+        assert isinstance(json_res, list)
+
+
+class TestResultsGetParams(object):
+
+    def test_get_attribute(self, results, columns):
+        res = results.results[0]
+        assert isinstance(results.results, ResultSet) is True
+        for i, name in enumerate(columns):
+            assert res[i] == res.__getattribute__(name.remote)
+
+    @pytest.mark.parametrize('col',
+                             [(c) for c in cols],
+                             ids=['cube.mangaid', 'cube.plate', 'cube.plateifu', 'ifu.name', 'nsa.z'])
+    def test_get_list(self, results, col):
+        assert col in results.columns
+        obj = results.getListOf(col)
+        assert obj is not None
+        assert isinstance(obj, list) is True
+        json_obj = results.getListOf(col, to_json=True)
+        assert isinstance(json_obj, six.string_types)
+
+    @pytest.mark.parametrize('results',
+                             [('nsa.z < 0.1 and haflux > 25'),
+                              ('nsa.z < 0.1'),
+                              ('haflux > 25')], indirect=True)
+    def test_get_list_all(self, results):
+        q = Query(searchfilter=results.searchfilter, mode=results.mode, limit=1,
+                  release=results._release, returnparams=results.returnparams)
+        r = q.run(start=0, end=1)
+        assert r.count == 1
+        mangaids = r.getListOf('mangaid', return_all=True)
+        assert len(mangaids) == r.totalcount
+        assert len(mangaids) == results.expdata['queries'][results.searchfilter]['count']
+
+    @pytest.mark.parametrize('ftype', [('dictlist'), ('listdict')])
+    @pytest.mark.parametrize('name', [(None), ('mangaid'), ('z')], ids=['noname', 'mangaid', 'z'])
+    def test_get_dict(self, results, ftype, name):
+        output = results.getDictOf(name, format_type=ftype)
+
         if ftype == 'listdict':
-            self.assertEqual(list, type(output))
-            self.assertEqual(dict, type(output[0]))
+            assert isinstance(output, list) is True
+            assert isinstance(output[0], dict) is True
             if name is not None:
-                self.assertEqual([name], list(output[0]))
+                assert set([name]) == set(list(output[0]))
             else:
-                self.assertEqual(set(self.columns), set(output[0]))
+                assert set(remotecols) == set(output[0])
         elif ftype == 'dictlist':
-            self.assertEqual(dict, type(output))
-            self.assertEqual(list, type(output.get('cube.mangaid')))
+            assert isinstance(output, dict) is True
+            assert isinstance(list(output.values())[0], list) is True
             if name is not None:
-                self.assertEqual([name], list(output.keys()))
+                assert set([name]) == set(list(output.keys()))
             else:
-                self.assertEqual(set(self.columns), set(output))
+                assert set(remotecols) == set(output)
 
-    def test_get_dict_local(self):
-        self._get_dict()
+        json_obj = results.getDictOf(name, format_type=ftype, to_json=True)
+        assert isinstance(json_obj, six.string_types)
 
-    def test_get_dict_local_param(self):
-        self._get_dict(name='cube.mangaid')
-
-    def test_get_dict_local_dictlist(self):
-        self._get_dict(ftype='dictlist')
-
-    def test_get_dict_local_dictlist_param(self):
-        self._get_dict(name='cube.mangaid', ftype='dictlist')
-
-    def test_get_dict_remote(self):
-        self._set_remote()
-        self._get_dict()
-
-    def test_get_dict_remote_param(self):
-        self._set_remote()
-        self._get_dict(name='cube.mangaid')
-
-    def test_get_dict_remote_dictlist(self):
-        self._set_remote()
-        self._get_dict(ftype='dictlist')
-
-    def test_get_dict_remote_dictlist_param(self):
-        self._set_remote()
-        self._get_dict(name='cube.mangaid', ftype='dictlist')
+    def test_get_dict_all(self, results):
+        output = results.getDictOf('mangaid', return_all=True)
+        assert len(output) == results.totalcount
 
 
-class TestResultsConvertTool(TestResultsBase):
+class TestResultsSort(object):
 
-    def _convertTool(self, tooltype='cube'):
+    @pytest.mark.parametrize('results', [('nsa.z < 0.1')], indirect=True)
+    def test_sort(self, results, limits):
+        results.sort('z')
+        limit, count = limits
+        data = results.expdata['queries'][results.searchfilter]['sorted']
+        assert tuple(data['1']) == results.results[0]
+        assert tuple(data[str(count)]) == results.results[count - 1]
 
-        if tooltype == 'cube':
-            marvintool = Cube
-        elif tooltype == 'maps':
-            marvintool = Maps
-        elif tooltype == 'modelcube':
-            marvintool = ModelCube
+
+class TestResultsPaging(object):
+
+    @pytest.mark.parametrize('results', [('nsa.z < 0.1')], indirect=True)
+    def test_check_counts(self, results, limits):
+        if results.mode == 'local':
+            pytest.skip('skipping now due to weird issue with local results not same as remote results')
+        results.sort('z')
+        limit, count = limits
+        data = results.expdata['queries'][results.searchfilter]
+        assert results.totalcount == data['count']
+        assert results.count == count
+        assert len(results.results) == count
+        assert results.limit == limit
+        assert results.chunk == limit
+
+    @pytest.mark.parametrize('results', [('nsa.z < 0.1')], indirect=True)
+    @pytest.mark.parametrize('chunk, rows',
+                             [(10, None),
+                              (20, (10, 21))],
+                             ids=['defaultchunk', 'chunk20'])
+    def test_get_next(self, results, chunk, rows, limits):
+        if results.mode == 'local':
+            pytest.skip('skipping now due to weird issue with local results not same as remote results')
+        limit, count = limits
+        results.sort('z')
+        results.getNext(chunk=chunk)
+        data = results.expdata['queries'][results.searchfilter]['sorted']
+        if results.count == results.totalcount:
+            assert results.results[0] == tuple(data['1'])
+            assert len(results.results) == count
         else:
-            marvintool = Cube
+            assert results.results[0] == tuple(data['11'])
+            assert len(results.results) == chunk
+            if rows:
+                assert results.results[rows[0]] == tuple(data[str(rows[1])])
 
-        r = self._run_query()
-        r.convertToTool(tooltype, limit=1)
-        self.assertIsNotNone(r.objects)
-        self.assertEqual(list, type(r.objects))
-        self.assertEqual(True, isinstance(r.objects[0], marvintool))
+    @pytest.mark.parametrize('results', [('nsa.z < 0.1')], indirect=True)
+    @pytest.mark.parametrize('index, chunk, rows',
+                             [(30, 10, [(0, 21)]),
+                              (45, 20, [(5, 31), (10, 36), (15, 41)])],
+                             ids=['defaultchunk', 'chunk20'])
+    def test_get_prev(self, results, index, chunk, rows, limits):
+        if results.mode == 'local':
+            pytest.skip('skipping now due to weird issue with local results not same as remote results')
+        limit, count = limits
+        results.sort('z')
+        results.getSubset(index, limit=chunk)
+        results.getPrevious(chunk=chunk)
+        data = results.expdata['queries'][results.searchfilter]['sorted']
+        if results.count == results.totalcount:
+            assert results.results[0] == tuple(data['1'])
+            assert len(results.results) == count
+        elif results.count == 0:
+            assert len(results.results) == 0
+        else:
+            assert len(results.results) == chunk
+            if rows:
+                for row in rows:
+                    assert results.results[row[0]] == tuple(data[str(row[1])])
 
-    def test_convert_to_tool_local(self):
-        self._convertTool()
+    @pytest.mark.parametrize('results', [('nsa.z < 0.1')], indirect=True)
+    @pytest.mark.parametrize('index, chunk, rows',
+                             [(35, 10, [(0, 36)]),
+                              (30, 20, [(0, 31), (15, 46)])],
+                             ids=['defaultchunk', 'chunk20'])
+    def test_get_set(self, results, index, chunk, rows, limits):
+        if results.mode == 'local':
+            pytest.skip('skipping now due to weird issue with local results not same as remote results')
+        limit, count = limits
+        results.sort('z')
+        results.getSubset(index, limit=chunk)
+        data = results.expdata['queries'][results.searchfilter]['sorted']
+        if results.count == results.totalcount:
+            assert results.results[0] == tuple(data['1'])
+            assert len(results.results) == count
+        elif results.count == 0:
+            assert len(results.results) == 0
+        else:
+            assert len(results.results) == chunk
+            if rows:
+                for row in rows:
+                    assert results.results[row[0]] == tuple(data[str(row[1])])
 
-    def test_convert_tool_no_spaxel(self):
-        with self.assertRaises(AssertionError) as cm:
-            self._convertTool('spaxel')
-        errmsg = 'Parameters must include spaxelprop.x and y in order to convert to Marvin Spaxel'
-        self.assertIn(errmsg, str(cm.exception))
+    @pytest.mark.parametrize('results', [('nsa.z < 0.1')], indirect=True)
+    def test_extend_set(self, results):
+        res = results.getSubset(0, limit=1)
+        assert results.count == 1
+        assert len(results.results) == 1
+        results.extendSet(start=1, chunk=2)
+        setcount = 3 if results.count > 3 else results.count
+        assert results.count == setcount
+        assert len(results.results) == setcount
 
-    def test_convert_tool_map(self):
-        self._convertTool('maps')
+    @pytest.mark.parametrize('results', [('nsa.z < 0.1')], indirect=True)
+    def test_loop(self, results):
+        res = results.getSubset(0, limit=1)
+        assert results.count == 1
+        results.loop(chunk=500)
+        assert results.count == results.expdata['queries'][results.searchfilter]['count']
+        assert results.count == results.totalcount
 
-    def test_convert_tool_modelcube(self):
-        self._convertTool('modelcube')
-
-    def test_convert_tool_no_modelcube(self):
-        config.setRelease('MPL-4')
-        with self.assertRaises(MarvinError) as cm:
-            self._convertTool('modelcube')
-        errmsg = "ModelCube requires at least dapver='2.0.2'"
-        self.assertIn(errmsg, str(cm.exception))
-
-    def test_convert_to_tool_remote(self):
-        self._set_remote()
-        self._convertTool()
-
-    def test_convert_tool_auto(self):
-        self._set_remote()
-        r = self._run_query()
-        r.convertToTool('cube', mode='auto')
-        self.assertEqual('remote', r.mode)
-        self.assertEqual('local', r.objects[0].mode)
-        self.assertEqual('db', r.objects[0].data_origin)
-
-    def test_convert_tool_auto_nodb(self):
-        self._set_remote()
-        config.forceDbOff()
-        r = self._run_query()
-        r.convertToTool('cube', mode='auto', limit=1)
-        self.assertEqual('remote', r.mode)
-        self.assertEqual('local', r.objects[0].mode)
-        self.assertEqual('file', r.objects[0].data_origin)
-
-
-class TestResultsPickling(TestResultsBase):
-
-    @classmethod
-    def setUpClass(cls):
-
-        for fn in ['~/test_results.mpf']:
-            if os.path.exists(fn):
-                os.remove(fn)
-
-        super(TestResultsPickling, cls).setUpClass()
-
-    def setUp(self):
-        self._files_created = []
-        super(TestResultsPickling, self).setUp()
-
-    def tearDown(self):
-
-        for fp in self._files_created:
-            if os.path.exists(fp):
-                os.remove(fp)
-
-    def test_pickle_results(self):
-        self._set_remote()
-        r = self._run_query()
-        path = r.save('results_test.mpf', overwrite=True)
-        self._files_created.append(path)
-        self.assertTrue(os.path.exists(path))
-
-        r = None
-        self.assertIsNone(r)
-
-        r = Results.restore(path)
-        self.assertEqual('nsa.z < 0.1 and cube.plate==8485', r.searchfilter)
-        self.assertEqual('remote', r.mode)
+    @pytest.mark.parametrize('results', [('nsa.z < 0.1')], indirect=True)
+    def test_get_all(self, results):
+        res = results.getAll()
+        assert results.count == results.totalcount
 
 
-class TestResultsPage(TestResultsBase):
+class TestResultsPickling(object):
 
-    def _setrun_query(self, limit=10):
-        config.setRelease("MPL-4")
-        self.filter = 'nsa.z < 0.1'
-        self._set_remote(limit=limit)
-        r = self.q.run()
-        r.sort('z')
-        self.assertEqual(1213, r.totalcount)
-        self.assertEqual(limit, r.count)
-        self.assertEqual(limit, len(r.results))
-        self.assertEqual(limit, r.limit)
-        self.assertEqual(limit, r.chunk)
-        return r
+    def test_pickle_save(self, results, temp_scratch):
+        file = temp_scratch.join('test_results.mpf')
+        path = results.save(str(file), overwrite=True)
+        assert file.check() is True
 
-    @skipIfNoBrian
-    def test_sort_res(self):
-        r = self._setrun_query(limit=10)
-        self.assertEqual(r.results[0], self.resdict['1'])
-        self.assertEqual(r.results[9], self.resdict['10'])
+    def test_pickle_restore(self, results, temp_scratch):
+        file = temp_scratch.join('test_results.mpf')
+        path = results.save(str(file), overwrite=True)
+        assert file.check() is True
+        r = Results.restore(str(file))
+        assert r.searchfilter == results.searchfilter
 
-    def _get_set(self, r, go, chunk=None, index=None):
-        if go == 'next':
-            r.getNext() if not chunk else r.getNext(chunk=chunk)
-        elif go == 'prev':
-            r.getPrevious() if not chunk else r.getPrevious(chunk=chunk)
-        elif go == 'set':
-            r.getSubset(index) if not chunk else r.getSubset(index, limit=chunk)
 
-        if chunk:
-            self.assertEqual(chunk, r.chunk)
-            self.assertEqual(chunk, len(r.results))
+class TestResultsConvertTool(object):
 
-        return r
+    @pytest.mark.parametrize('results', [('nsa.z < 0.1 and haflux > 25')], indirect=True)
+    @pytest.mark.parametrize('objtype, tool',
+                             [('cube', Cube), ('maps', Maps), ('spaxel', Spaxel),
+                              ('modelcube', ModelCube)])
+    def test_convert_success(self, results, objtype, tool, exporigin):
+        if config.release == 'MPL-4' and objtype == 'modelcube':
+            pytest.skip('no modelcubes in mpl-4')
 
-    @skipIfNoBrian
-    def test_getNext_10(self):
-        r = self._setrun_query(limit=10)
-        r = self._get_set(r, 'next')
-        self.assertEqual(r.results[0], self.resdict['11'])
-        self.assertEqual(10, len(r.results))
+        results.convertToTool(objtype, limit=1)
+        assert results.objects is not None
+        assert isinstance(results.objects, list) is True
+        assert isinstance(results.objects[0], tool) is True
+        if objtype != 'spaxel':
+            assert results.mode == results.objects[0].mode
 
-    @skipIfNoBrian
-    def test_getNext_20(self):
-        r = self._setrun_query(limit=10)
-        r = self._get_set(r, 'next', chunk=20)
-        self.assertEqual(r.results[0], self.resdict['11'])
-        self.assertEqual(r.results[10], self.resdict['21'])
+    @pytest.mark.parametrize('objtype, error, errmsg',
+                             [('modelcube', MarvinError, "ModelCube requires at least dapver='2.0.2'"),
+                              ('spaxel', AssertionError, 'Parameters must include spaxelprop.x and y in order to convert to Marvin Spaxel')],
+                             ids=['mcminrelease', 'nospaxinfo'])
+    def test_convert_failures(self, results, objtype, error, errmsg):
+        if config.release > 'MPL-4' and objtype == 'modelcube':
+            pytest.skip('modelcubes in post mpl-4')
 
-    @skipIfNoBrian
-    def test_getPrevious_10(self):
-        r = self._setrun_query(limit=10)
-        r = self._get_set(r, 'set', index=30)
-        r = self._get_set(r, 'prev')
-        self.assertEqual(r.results[0], self.resdict['21'])
-        self.assertEqual(10, len(r.results))
+        with pytest.raises(error) as cm:
+            results.convertToTool(objtype, limit=1)
+        assert cm.type == error
+        assert errmsg in str(cm.value)
 
-    @skipIfNoBrian
-    def test_getPrevious_20(self):
-        r = self._setrun_query(limit=10)
-        r = self._get_set(r, 'set', index=45)
-        r = self._get_set(r, 'prev', chunk=20)
-        self.assertEqual(r.results[5], self.resdict['31'])
-        self.assertEqual(r.results[10], self.resdict['36'])
-        self.assertEqual(r.results[15], self.resdict['41'])
-        self.assertEqual(20, len(r.results))
 
-    @skipIfNoBrian
-    def test_getSubset_10(self):
-        r = self._setrun_query(limit=10)
-        r = self._get_set(r, 'set', index=35)
-        self.assertEqual(10, len(r.results))
-        self.assertEqual(r.results[0], self.resdict['36'])
-
-    @skipIfNoBrian
-    def test_getSubset_20(self):
-        r = self._setrun_query(limit=10)
-        r = self._get_set(r, 'set', chunk=20, index=30)
-        self.assertEqual(r.results[0], self.resdict['31'])
-        self.assertEqual(r.results[15], self.resdict['46'])
-
-if __name__ == '__main__':
-    verbosity = 2
-    unittest.main(verbosity=verbosity)

@@ -1,7 +1,7 @@
 .. _marvin-tools:
 
-Tools
-=====
+Tools (marvin.tools)
+====================
 
 Marvin provides tools that are convenience classes and functions for searching, accessing, interacting with, and visualzing MaNGA
 data. The tools make up the common core components of Marvin and are utilized within the tools itself, as well as by the Web and API.
@@ -22,7 +22,7 @@ organization\:
 - :ref:`marvin-tools-maps`: Interface to the MaNGA DAP Maps
 - :ref:`marvin-tools-bin`: Explore a bin of spaxels
 - :ref:`marvin-tools-modelcube`: Interface to the MaNGA DAP Modelcube object
-- :ref:`marvin-tools-plate`: Explore all cubes for a given Plate
+- :doc:`tools/plate`: Explore all cubes for a given Plate
 
 **Helper Tools**: Not importable but still usable
 

@@ -17,6 +17,9 @@ from __future__ import print_function
 
 import os
 import sys
+import warnings
+import pwd
+
 import marvin
 
 __all__ = ['MarvinError', 'MarvinUserWarning', 'MarvinSkippedTestWarning',
@@ -44,10 +47,17 @@ class MarvinSentry(object):
                         )
                 )
             try:
-                self.client.context.merge({'user': {'name': os.getlogin(),
+                self.client.context.merge({'user': {'name': pwd.getpwuid(os.getuid())[0],
                                                     'system': '_'.join(os.uname())}})
-            except OSError:
+            except (OSError, IOError) as ee:
+                warnings.warn('cannot initiate Sentry error reporting: {0}.'.format(str(ee)),
+                              UserWarning)
                 self.client = None
+            except:
+                warnings.warn('cannot initiate Sentry error reporting: unknown error.',
+                              UserWarning)
+                self.client = None
+
         else:
             self.client = None
 

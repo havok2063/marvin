@@ -3,27 +3,22 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. role:: header_no_toc
+  :class: class_header_no_toc
+
+.. title:: Marvin documentation
+
 :tocdepth: 2
 
-|
-
-.. image:: _static/marvin.png
-    :width: 200px
-    :align: left
-    :alt: Marvin
-
 .. image:: _static/logo5_lores.jpg
-    :width: 800px
+    :width: 600px
     :align: center
     :alt: MaNGA logo
 
 |
 
-Marvin Docs
-===========
+.. rubric:: :header_no_toc:`Welcome to Marvin's documentation!`
 
-Welcome to Marvin's documentation!
-----------------------------------
 Marvin is the ultimate tool to visualise and analyse MaNGA data. It is
 developed and maintained by the MaNGA team.  Check out the
 `Marvin Github <https://github.com/sdss/marvin>`_ page.
@@ -33,85 +28,92 @@ remember to :ref:`acknowledge and cite<marvin-citation>` us in your paper!
 
 |
 
-:doc:`whats-new`
-^^^^^^^^^^^^^^^^
-
-:doc:`known-issues`
-^^^^^^^^^^^^^^^^^^^
-
-`Changelog <https://github.com/sdss/marvin/blob/master/CHANGELOG.md>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-|
-
-Marvin Primer
-=============
-
-.. toctree::
-   :titlesonly:
-
-   overview
-   installation
-   first-steps
-   general
-   Frequently Asked Questions <faq>
-   tools/visual-guide
-
-|
-
-:doc:`tools`
+Introduction
 ============
 
-.. toctree::
-   :titlesonly:
-   :maxdepth: 1
+* :doc:`What's New in Marvin <whats-new>`
+* :doc:`Changelog <changelog>`
+* :ref:`Known issues <marvin-known-issues>`
+.. * :ref:`TODOs <marvin-todo>`
 
-   query
-   results
-   tools/cube
-   tools/bpt
-   tools/modelcube
-   tools/maps
-   images
+|
 
+Marvin at a Glance
+==================
 
-:doc:`api`
+* :doc:`overview`
+* :doc:`installation`
+* :doc:`faq`
+* :doc:`getting-started`
+* :doc:`tutorials`
+* :doc:`exercises`
+* :doc:`cheatsheet`
+
+|
+
+Components
 ==========
 
+* :doc:`core`
 
-:doc:`web`
-==========
+  * :doc:`core/config`
+  * :doc:`core/data-access-modes`
+  * :doc:`core/downloads`
+  * :doc:`tools/quantities`
+
+* :doc:`tools`
+
+  * :doc:`query`
+  * :doc:`results`
+  * :doc:`tools/plate`
+  * :doc:`tools/cube`
+  * :doc:`tools/modelcube`
+  * :doc:`tools/maps`
+
+    * :doc:`tools/bpt`
+
+  * :doc:`tools/map`
+
+    * :doc:`tools/enhanced-map`
+
+  * :doc:`tools/spaxel`
+  * :doc:`tools/bin`
+
+  * :doc:`utils`
+
+    * :doc:`Image <utils/images>`
+    * :doc:`Map Plotting <utils/plot-map>`
+    * :doc:`Scatter Plotting <utils/plot-scatter>`
+    * :doc:`Histogram Plotting <utils/plot-hist>`
+    * :doc:`Maskbit <utils/maskbit>`
+
+* :doc:`api`
+
+* :doc:`web`
+
+* :doc:`datamodel/datamodels`
+
+  * :doc:`datamodel/mpl4`
+  * :doc:`datamodel/mpl5`
+  * :doc:`datamodel/mpl6`
 
 |
 
-Tutorials
-=========
+.. General Reference
+.. =================
 
-.. toctree::
-   :titlesonly:
-   :maxdepth: 1
+.. .. toctree::
+..    :titlesonly:
+..    :maxdepth: 1
 
-   Example Queries <tutorials/query-examples>
-   tutorials/query-practice
-   tutorials/boolean-search-tutorial
-   tutorials/jupyter-notebooks
-|
-
-General Reference
-=================
-
-.. toctree::
-   :titlesonly:
-   :maxdepth: 1
-
-   data-access-modes
-   Available Query Parameters <query-params>
-   tools/visual-guide
+..    maps-properties-channels
+..    Available Query Parameters <query-params>
+..    tools/visual-guide
 
 |
 
-Documentation
-=============
+API/Code Reference
+==================
 
 .. toctree::
    :maxdepth: 1
@@ -119,6 +121,7 @@ Documentation
    api/general
    api/api
    api/tools
+   api/quantities
    api/queries
    api/utils
    api/web

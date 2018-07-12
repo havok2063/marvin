@@ -14,7 +14,7 @@ from __future__ import division
 from __future__ import print_function
 
 from flask import jsonify
-from flask_classy import route
+from flask_classful import route
 
 from marvin.tools.rss import RSS
 from marvin.api.base import BaseView, arg_validate as av
@@ -172,15 +172,15 @@ class RSSView(BaseView):
         # Pop any args we don't want going into Rss
         args = self._pop_args(args, arglist='name')
 
-        rss, results = _getRSS(name, *args)
+        rss, results = _getRSS(name, **args)
         self.update_results(results)
 
         if rss:
             self.results['data'] = {}
-            self.results['data']['wavelength'] = rss[0].wavelength.tolist()
+            self.results['data']['wavelength'] = rss[0].wavelength.value.tolist()
 
             for ii, fiber in enumerate(rss):
-                flux = fiber.flux.tolist()
+                flux = fiber.value.tolist()
                 ivar = fiber.ivar.tolist()
                 mask = fiber.mask.tolist()
                 self.results['data'][ii] = [flux, ivar, mask]

@@ -16,6 +16,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.event import listen
 from sqlalchemy.pool import Pool
 from marvin.core import caching_query
+from marvin import config
 from hashlib import md5
 from dogpile.cache.region import make_region
 import os
@@ -34,6 +35,16 @@ else:
 dogroot = os.path.join(dogpath, 'dogpile_data')
 if not os.path.isdir(dogroot):
     os.makedirs(dogroot)
+
+
+# make an nsa region
+def make_nsa_region(name):
+    reg = make_region(key_mangler=md5_key_mangler).configure(
+            'dogpile.cache.dbm',
+            expiration_time=3600,
+            arguments={'filename': os.path.join(dogroot, '{0}_cache.dbm'.format(name))}
+        )
+    return reg
 
 
 # db hash key
@@ -61,6 +72,14 @@ regions['default'] = make_region(
             # "filename": os.path.join(dogroot, "cache.dbm") # file option
         }
     )
+
+for mpl in config._mpldict.keys():
+    nsacache = 'nsa_{0}'.format(mpl.lower().replace('-', ''))
+    regions[nsacache] = make_nsa_region(nsacache)
+
+#regions['nsa_mpl5'] = make_nsa_region('nsa_mpl5')
+#regions['nsa_mpl4'] = make_nsa_region('nsa_mpl4')
+#regions['nsa_mpl6'] = make_nsa_region('nsa_mpl6')
 
 
 def clearSearchPathCallback(dbapi_con, connection_record):
@@ -123,7 +142,7 @@ class DatabaseConnection(object):
             me.database_connection_string = database_connection_string
 
             # change 'echo' to print each SQL query (for debugging/optimizing/the curious)
-            me.engine = create_engine(me.database_connection_string, echo=False)
+            me.engine = create_engine(me.database_connection_string, echo=False, pool_size=10, pool_recycle=1800)
 
             me.metadata = MetaData()
             me.metadata.bind = me.engine

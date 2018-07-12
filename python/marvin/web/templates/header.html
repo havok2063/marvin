@@ -17,8 +17,9 @@
         <div class="navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
                 <li class="{{'active' if active_page=='help'}}"><a target='_blank' href="https://github.com/sdss/marvin"><i class="fa fa-github fa-fw" aria-hidden="true"></i>Github</a></li>
-                <li class="{{'active' if active_page=='help'}}"><a target='_blank' href="https://api.sdss.org/doc/manga/marvin/"><i class="fa fa-question-circle-o fa-fw" aria-hidden="true"></i>Help</a></li>
-                <li class="{{'active' if active_page=='search'}}"><a href="{{url_for('search_page.Search:index')}}"><i class="fa fa-search fa-fw" aria-hidden="true"></i>Search</a></li>
+                <li class="{{'active' if active_page=='help'}}"><a target='_blank' href="http://sdss-marvin.readthedocs.io/en/stable/"><i class="fa fa-question-circle-o fa-fw" aria-hidden="true"></i>Help</a></li>
+                <li class="{{'active' if active_page=='help'}}"><a target='_blank' href='http://sdss-marvin.readthedocs.io/en/stable/citation.html'><i class="fa fa-quote-right fa-fw" aria-hidden="true"></i>Cite Us</a></li>
+                <li class="{{'active' if active_page=='search'}}" id='search_link'><a href="{{url_for('search_page.Search:index')}}"><i class="fa fa-search fa-fw" aria-hidden="true"></i>Query</a></li>
             </ul>
 
             <!-- Galaxy ID Search Box-->
@@ -29,7 +30,7 @@
             {# MPL Version Selection #}
             <form class='navbar-form navbar-left navbar-input-group' id='mplform' role='form' method="post">
                 <div id='marvinmpl' class='form-group'>
-                    <select class='form-control selectpicker input-sm show-tick' id='release' name='release' title='Choose an MPL/DR' >
+                    <select class='form-control selectpicker input-sm show-tick' id='mplselect' name='release' title='Choose an MPL/DR' >
                         {% for ver in session.versions %}
                             {% if ver.name == session.release %}
                                 <option data-subtext='{{ver.subtext}}' id='{{ver.name}}' value='{{ver.name}}' selected>{{ver.name}}</option>
@@ -44,9 +45,9 @@
             <!-- Links to some Docs -->
             {# Links to Whats New and Known Issues #}
             <div class='nav navbar-nav btn-group' id='links' role='group'>
-                <a class='navbar-btn btn btn-info' target='_blank' href='https://api.sdss.org/doc/manga/marvin/whats-new.html'>What's New</a>
-                <a class='navbar-btn btn btn-danger' target='_blank' href='https://api.sdss.org/doc/manga/marvin/known-issues.html'>Known Issues</a>
-                {#<a class='navbar-btn btn btn-warning' target='_blank' href='https://api.sdss.org/doc/manga/marvin/getinvolved.html'>Get Involved</a>#}
+                <a class='navbar-btn btn btn-info' target='_blank' href='http://sdss-marvin.readthedocs.io/en/stable/whats-new.html'>What's New</a>
+                <a class='navbar-btn btn btn-danger' target='_blank' href='http://sdss-marvin.readthedocs.io/en/stable/known-issues.html'>Known Issues</a>
+                {#<a class='navbar-btn btn btn-warning' target='_blank' href='http://sdss-marvin.readthedocs.io/en/stable/getinvolved.html'>Get Involved</a>#}
                 <a class='navbar-btn btn btn-success' target='_blank' href='https://github.com/sdss/marvin/issues/new'>Provide Feedback</a>
             </div>
 
@@ -75,7 +76,7 @@
                             <ul class="dropdown-menu">
                                 <li><a href="{{url_for('users_page.User:preferences')}}"><i class="fa fa-cog fa-fw" aria-hidden="true"></i> Preferences</a></li>
                                 <li class="divider"></li>
-                                <li><a href="#"><i class="fa fa-sign-out fa-fw" aria-hidden="true"></i> Logout</a></li>
+                                <li><a href="{{url_for('index_page.logout')}}"><i class="fa fa-sign-out fa-fw" aria-hidden="true"></i> Logout</a></li>
                             </ul>
                         </li>
                     </ul>

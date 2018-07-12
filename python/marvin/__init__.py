@@ -10,17 +10,16 @@ import os
 import re
 import warnings
 import sys
-import marvin
 from collections import OrderedDict
-from distutils.version import StrictVersion
 
 # Set the Marvin version
-try:
-    from marvin.version import get_version
-except ImportError as e:
-    __version__ = 'dev'
-else:
-    __version__ = get_version()
+__version__ = '2.2.6dev'
+# try:
+#     from marvin.version import get_version
+# except ImportError as e:
+#     __version__ = 'dev'
+# else:
+#     __version__ = get_version()
 
 # Does this so that the implicit module definitions in extern can happen.
 from marvin import extern
@@ -33,6 +32,8 @@ from brain.core.core import URLMapDict
 # Inits the log
 from brain.core.logger import initLog
 
+from astropy.wcs import FITSFixedWarning
+
 # Defines log dir.
 if 'MARVIN_LOGS_DIR' in os.environ:
     logFilePath = os.path.join(os.path.realpath(os.environ['MARVIN_LOGS_DIR']), 'marvin.log')
@@ -42,13 +43,17 @@ else:
 log = initLog(logFilePath)
 
 warnings.simplefilter('once')
-warnings.filterwarnings('ignore', 'Skipped unsupported reflection of expression-based index')
-warnings.filterwarnings('ignore', '(.)+size changed, may indicate binary incompatibility(.)+')
+# warnings.filterwarnings('ignore', 'Skipped unsupported reflection of expression-based index')
+# warnings.filterwarnings('ignore', '(.)+size changed, may indicate binary incompatibility(.)+')
+warnings.filterwarnings('ignore', category=FITSFixedWarning)
 
-# Filters for PY3
-# TODO: undestand why these warnings are issued and fix the root of the problem (JSG)
+# This warning seems harmless (see https://github.com/astropy/astropy/issues/6025) so
+# will ignore it for now.
 warnings.filterwarnings('ignore', 'can\'t resolve package(.)+')
-warnings.filterwarnings('ignore', 'unclosed file <_io.TextIOWrapper+')
+
+# Ignore DeprecationWarnings that are not Marvin's
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('once', category=DeprecationWarning, module='marvin')
 
 
 class MarvinConfig(object):
@@ -238,9 +243,9 @@ class MarvinConfig(object):
             except Exception as e:
                 warnings.warn('Cannot retrieve URLMap. Remote functionality will not work: {0}'.format(e),
                               MarvinUserWarning)
-                self._urlmap = URLMapDict()
+                self.urlmap = URLMapDict()
             else:
-                self._urlmap = response.getRouteMap()
+                self.urlmap = response.getRouteMap()
 
         return self._urlmap
 
@@ -248,6 +253,7 @@ class MarvinConfig(object):
     def urlmap(self, value):
         """Manually sets the URLMap."""
         self._urlmap = value
+        arg_validate.urlmap = self._urlmap
 
     @property
     def xyorig(self):
@@ -283,11 +289,9 @@ class MarvinConfig(object):
     def _checkConfig(self):
         ''' Check the config '''
         # set and sort the base MPL dictionary
-        mpldict = {'MPL-5': ('v2_0_1', '2.0.2'),
-                   'MPL-4': ('v1_5_1', '1.1.1'),
-                   'MPL-3': ('v1_3_3', 'v1_0_0'),
-                   'MPL-2': ('v1_2_0', None),
-                   'MPL-1': ('v1_0_0', None)}  # , 'DR13': ('v1_5_4', None), 'DR14': ('v2_1_1', None)}
+        mpldict = {'MPL-6': ('v2_3_1', '2.1.3'),
+                   'MPL-5': ('v2_0_1', '2.0.2'),
+                   'MPL-4': ('v1_5_1', '1.1.1')}  # , 'DR13': ('v1_5_4', None), 'DR14': ('v2_1_2', None)}
         mplsorted = sorted(mpldict.items(), key=lambda p: p[1][0], reverse=True)
         self._mpldict = OrderedDict(mplsorted)
 
@@ -314,22 +318,12 @@ class MarvinConfig(object):
         self.release = version
 
     def setMPL(self, mplver):
-        """As :func:`setRelease` but check that the version is and MPL."""
-
-        mm = re.search('MPL-([0-9])', mplver)
-        assert mm is not None, 'MPL version must be of form "MPL-[X]"'
-
-        if mm:
-            self.setRelease(mplver)
+        """As :func:`setRelease` but check that the version is an MPL."""
+        self.setRelease(mplver)
 
     def setDR(self, drver):
-        """As :func:`setRelease` but check that the version is and MPL."""
-
-        mm = re.search('DR1([3-9])', drver)
-        assert mm is not None, 'DR version must be of form "DR[XX]"'
-
-        if mm:
-            self.setRelease(drver)
+        """As :func:`setRelease` but check that the version is a DR."""
+        self.setRelease(drver)
 
     def lookUpVersions(self, release=None):
         """Retrieve the DRP and DAP versions that make up a release version.
@@ -407,6 +401,7 @@ class MarvinConfig(object):
         elif sasmode == 'utah':
             marvin_base = 'test/marvin2/' if test else 'marvin2/'
             self.sasurl = 'https://api.sdss.org/{0}'.format(marvin_base)
+        self.urlmap = None
 
     def forceDbOff(self):
         ''' Force the database to be turned off '''
@@ -463,8 +458,15 @@ config = MarvinConfig()
 from marvin.db.marvindb import MarvinDB
 marvindb = MarvinDB(dbtype=config.db)
 
+# Init MARVIN_DIR
+marvindir = os.environ.get('MARVIN_DIR', None)
+if not marvindir:
+    moduledir = os.path.dirname(os.path.abspath(__file__))
+    marvindir = moduledir.rsplit('/', 2)[0]
+    os.environ['MARVIN_DIR'] = marvindir
+
 # Inits the URL Route Map
 from marvin.api.api import Interaction
 config.sasurl = 'https://api.sdss.org/marvin2/'
-# config.sasurl = 'http://24147588.ngrok.io/marvin2/'  # this is a temporary measure REMOVE THIS
-# config.sasurl = 'http://localhost:5000/marvin2/'
+
+from marvin.api.base import arg_validate

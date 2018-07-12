@@ -6,7 +6,7 @@
 # @Author: Brian Cherinka
 # @Date:   2016-10-19 17:36:00
 # @Last modified by:   Brian Cherinka
-# @Last Modified time: 2017-02-18 13:17:57
+# @Last Modified time: 2018-03-05 15:18:24
 #
 # This is the Marvin setup
 #
@@ -14,25 +14,16 @@
 from setuptools import setup, find_packages
 
 import os
-import warnings
-from get_version import generate_version_py
+
+from astropy.utils.data import download_file
 
 import argparse
+import shutil
 import sys
 
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
-
-
-def convert_md_to_rst(fp):
-    try:
-        import pypandoc
-        output = pypandoc.convert_file(fp, 'rst')
-        return output
-    except ImportError:
-        warnings.warn('cannot import pypandoc.', UserWarning)
-        return open(fp).read()
 
 
 def add_data_file(directory, data_files):
@@ -46,7 +37,7 @@ def get_data_files(with_web=True):
 
     data_files = []
 
-    add_data_file('python/marvin/extern/', data_files)
+    # add_data_file('python/marvin/extern/', data_files)
 
     if with_web:
         add_data_file('python/marvin/web/configuration/', data_files)
@@ -55,21 +46,37 @@ def get_data_files(with_web=True):
         add_data_file('python/marvin/web/templates/', data_files)
         add_data_file('python/marvin/web/uwsgi_conf_files/', data_files)
 
-    data_files.append('../marvin/db/dbconfig.ini')
-    data_files.append('../../requirements.txt')
-    data_files.append('../../README.md')
+    # data_files.append('../marvin/db/dbconfig.ini')
+    # data_files.append('../../requirements.txt')
+    # data_files.append('../../README.md')
+    # data_files.append('utils/plot/Linear_L_0-1.csv')
 
     return data_files
 
 
+def remove_args(parser):
+    ''' Remove custom arguments from the parser '''
+
+    arguments = []
+    for action in list(parser._get_optional_actions()):
+        if '--help' not in action.option_strings:
+            arguments += action.option_strings
+
+    for arg in arguments:
+        if arg in sys.argv:
+            sys.argv.remove(arg)
+
+
+# requirements
 requirements_file = os.path.join(os.path.dirname(__file__), 'requirements.txt')
 install_requires = [line.strip().replace('==', '>=') for line in open(requirements_file)
                     if not line.strip().startswith('#') and line.strip() != '']
 
+
 NAME = 'sdss-marvin'
-VERSION = '2.1.2dev'
+# do not use x.x.x-dev.  things complain.  instead use x.x.xdev
+VERSION = '2.2.6dev'
 RELEASE = 'dev' not in VERSION
-generate_version_py(NAME, VERSION, RELEASE)
 
 
 def run(data_files, packages):
@@ -78,7 +85,7 @@ def run(data_files, packages):
           version=VERSION,
           license='BSD3',
           description='Toolsuite for dealing with the MaNGA dataset',
-          long_description=convert_md_to_rst('README.md'),
+          long_description=open('README.rst').read(),
           author='The Marvin Developers',
           author_email='havok2063@hotmail.com',
           keywords='marvin manga astronomy MaNGA',
@@ -86,6 +93,7 @@ def run(data_files, packages):
           packages=packages,
           package_dir={'': 'python'},
           package_data={'': data_files},
+          include_package_data=True,
           install_requires=install_requires,
           scripts=['bin/run_marvin', 'bin/check_marvin'],
           classifiers=[
@@ -117,8 +125,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]))
 
-    parser.add_argument('-w', '--noweb', dest='noweb', default=False,
-                        action='store_true', help='Does not build the web.')
+    parser.add_argument('-w', '--noweb', dest='noweb', default=False, action='store_true',
+                        help='Does not build the web.')
 
     # We use parse_known_args because we want to leave the remaining args for distutils
     args = parser.parse_known_args()[0]
@@ -130,15 +138,14 @@ if __name__ == '__main__':
 
     data_files = get_data_files(with_web=not args.noweb)
 
-    # Now we remove all our custom arguments to make sure they don't interfere with distutils
-    arguments = []
-    for action in list(parser._get_optional_actions()):
-        if '--help' not in action.option_strings:
-            arguments += action.option_strings
+    maskbits_path = download_file('https://svn.sdss.org/public/repo/sdss/idlutils/'
+                                  'trunk/data/sdss/sdssMaskbits.par')
+    shutil.copy(maskbits_path, os.path.join(os.path.dirname(__file__),
+                                            'python/marvin/data/',
+                                            'sdssMaskbits.par'))
 
-    for arg in arguments:
-        if arg in sys.argv:
-            sys.argv.remove(arg)
+    # Now we remove all our custom arguments to make sure they don't interfere with distutils
+    remove_args(parser)
 
     # Runs distutils
     run(data_files, packages)

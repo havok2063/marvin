@@ -2,7 +2,7 @@
 * @Author: Brian Cherinka
 * @Date:   2016-12-13 09:41:40
 * @Last Modified by:   Brian Cherinka
-* @Last Modified time: 2016-12-15 17:20:57
+* @Last Modified time: 2017-04-01 01:20:05
 */
 
 // Using Mike Bostocks box.js code
@@ -16,10 +16,11 @@
 
 // Dec-13-2016 - converted to D3 v4
 
+//jshint esversion: 6
 'use strict';
 
 function iqr(k) {
-    return function (d, i) {
+    return function (d, index) {
         var q1 = d.quartiles[0],
             q3 = d.quartiles[2],
             iqr = (q3 - q1) * k,
@@ -224,7 +225,7 @@ d3.box = function () {
             // Update box ticks.
             var boxTick = g.selectAll("text.box").data(quartileData);
 
-            if (showLabels == true) {
+            if (showLabels === true) {
                 boxTick.enter().append("text").attr("class", "box").attr("dy", ".3em").attr("dx", function (d, i) {
                     return i & 1 ? 6 : -6;
                 }).attr("x", function (d, i) {
@@ -292,7 +293,7 @@ d3.box = function () {
 
     box.domain = function (x) {
         if (!arguments.length) return domain;
-        domain = x == null ? x : d3.functor(x);
+        domain = x === null ? x : d3.functor(x);
         return box;
     };
 
@@ -332,9 +333,10 @@ d3.box = function () {
 * @Author: Brian Cherinka
 * @Date:   2016-12-13 09:49:30
 * @Last Modified by:   Brian Cherinka
-* @Last Modified time: 2016-12-13 14:05:15
+* @Last Modified time: 2017-04-01 01:18:52
 */
 
+//jshint esversion: 6
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -402,7 +404,7 @@ var BoxWhisker = function () {
     }, {
         key: 'iqr',
         value: function iqr(k) {
-            return function (d, i) {
+            return function (d, index) {
                 var q1 = d.quartiles[0],
                     q3 = d.quartiles[2],
                     iqr = (q3 - q1) * k,
@@ -421,7 +423,7 @@ var BoxWhisker = function () {
         value: function initBoxplot() {
 
             // // Define the div for the tooltip
-            // var tooltip = d3.select(this.tooltip).append("div")
+            // let tooltip = d3.select(this.tooltip).append("div")
             //     .attr("class", "tooltip")
             //     .style("opacity", 0);
 
@@ -438,10 +440,11 @@ var BoxWhisker = function () {
 ;/*
 * @Author: Brian Cherinka
 * @Date:   2016-04-29 09:29:24
-* @Last Modified by:   Brian
-* @Last Modified time: 2016-04-29 09:45:04
+* @Last Modified by:   Brian Cherinka
+* @Last Modified time: 2017-04-01 01:11:43
 */
 
+//jshint esversion: 6
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -509,17 +512,13 @@ var Carousel = function () {
 * @Author: Brian Cherinka
 * @Date:   2016-04-13 16:49:00
 * @Last Modified by:   Brian Cherinka
-<<<<<<< HEAD
-* @Last Modified time: 2017-02-21 16:26:48
-=======
-* @Last Modified time: 2016-09-26 17:40:15
->>>>>>> upstream/marvin_refactor
+* @Last Modified time: 2018-03-02 17:22:31
 */
 
 //
 // Javascript Galaxy object handling JS things for a single galaxy
 //
-
+//jshint esversion: 6
 'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -527,6 +526,44 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var SpaxelError = function (_Error) {
+    _inherits(SpaxelError, _Error);
+
+    function SpaxelError(message) {
+        _classCallCheck(this, SpaxelError);
+
+        var _this2 = _possibleConstructorReturn(this, (SpaxelError.__proto__ || Object.getPrototypeOf(SpaxelError)).call(this, message));
+
+        _this2.message = message;
+        _this2.name = 'SpaxelError';
+        _this2.status = -1;
+        return _this2;
+    }
+
+    return SpaxelError;
+}(Error);
+
+var MapError = function (_Error2) {
+    _inherits(MapError, _Error2);
+
+    function MapError(message) {
+        _classCallCheck(this, MapError);
+
+        var _this3 = _possibleConstructorReturn(this, (MapError.__proto__ || Object.getPrototypeOf(MapError)).call(this, message));
+
+        _this3.message = message;
+        _this3.name = 'MapError';
+        _this3.status = -1;
+        return _this3;
+    }
+
+    return MapError;
+}(Error);
 
 var Galaxy = function () {
 
@@ -549,6 +586,7 @@ var Galaxy = function () {
         this.webspec = null;
         this.staticdiv = this.specdiv.find('#staticdiv');
         this.dynamicdiv = this.specdiv.find('#dynamicdiv');
+        this.maptab = $('#maptab');
         // toggle elements
         this.togglediv = $('#toggleinteract');
         this.toggleload = $('#toggle-load');
@@ -560,7 +598,7 @@ var Galaxy = function () {
         this.dapmapsbut = $('#dapmapsbut');
         this.dapselect = $('#dapmapchoices');
         this.dapbt = $('#dapbtchoices');
-        this.dapselect.selectpicker('deselectAll');
+        //this.dapselect.selectpicker('deselectAll');
         this.resetmapsbut = $('#resetmapsbut');
         // nsa elements
         this.nsadisplay = $('#nsadisp'); // the NSA Display tab element
@@ -583,6 +621,7 @@ var Galaxy = function () {
         //this.checkToggle();
 
         //Event Handlers
+        this.maptab.on('click', this, this.resizeSpecView); // this event fires when a user clicks the MapSpec View Tab
         this.dapmapsbut.on('click', this, this.getDapMaps); // this event fires when a user clicks the GetMaps button
         this.resetmapsbut.on('click', this, this.resetMaps); // this event fires when a user clicks the Maps Reset button
         this.togglediv.on('change', this, this.initDynamic); // this event fires when a user clicks the Spec/Map View Toggle
@@ -630,6 +669,19 @@ var Galaxy = function () {
             this.ifu = _plateifu$split2[1];
         }
 
+        // Resize the ouput MapSpec View when tab clicked
+
+    }, {
+        key: 'resizeSpecView',
+        value: function resizeSpecView(event) {
+            var _this = event.data;
+            // wait 10 milliseconds before resizing so divs will have the correct size
+            m.utils.window[0].setTimeout(function () {
+                _this.webspec.resize();
+                _this.olmap.map.updateSize();
+            }, 10);
+        }
+
         // Initialize and Load a DyGraph spectrum
 
     }, {
@@ -641,7 +693,7 @@ var Galaxy = function () {
                 labels: labels,
                 errorBars: true, // TODO DyGraph shows 2-sigma error bars FIX THIS
                 ylabel: 'Flux [10<sup>-17</sup> erg/cm<sup>2</sup>/s/Å]',
-                xlabel: 'Wavelength [Ångströms]'
+                xlabel: 'Observed Wavelength [Ångströms]'
             });
         }
 
@@ -654,6 +706,7 @@ var Galaxy = function () {
             if (status !== undefined && status === -1) {
                 this.specmsg.show();
             }
+            specmsg = specmsg.replace('<', '').replace('>', '');
             var newmsg = '<strong>' + specmsg + '</strong>';
             this.specmsg.empty();
             this.specmsg.html(newmsg);
@@ -681,18 +734,24 @@ var Galaxy = function () {
     }, {
         key: 'initHeatmap',
         value: function initHeatmap(maps) {
-            console.log('initHeatmap', this.mapsdiv);
             var mapchildren = this.mapsdiv.children('div');
-            console.log('mapchildren', mapchildren);
             var _this = this;
             $.each(mapchildren, function (index, child) {
                 var mapdiv = $(child).find('div').first();
                 mapdiv.empty();
                 if (maps[index] !== undefined && maps[index].data !== null) {
-                    this.heatmap = new HeatMap(mapdiv, maps[index].data, maps[index].msg, _this);
+                    this.heatmap = new HeatMap(mapdiv, maps[index].data, maps[index].msg, maps[index].plotparams, _this);
                     this.heatmap.mapdiv.highcharts().reflow();
                 }
             });
+        }
+
+        // Make Promise error message
+
+    }, {
+        key: 'makeError',
+        value: function makeError(name) {
+            return 'Unknown Error: the ' + name + ' javascript Ajax request failed!';
         }
 
         // Retrieves a new Spaxel from the server based on a given mouse position or xy spaxel coord.
@@ -700,6 +759,8 @@ var Galaxy = function () {
     }, {
         key: 'getSpaxel',
         value: function getSpaxel(event) {
+            var _this4 = this;
+
             var mousecoords = event.coordinate === undefined ? null : event.coordinate;
             var divid = $(event.target).parents('div').first().attr('id');
             var maptype = divid !== undefined && divid.search('highcharts') !== -1 ? 'heatmap' : 'optical';
@@ -707,17 +768,16 @@ var Galaxy = function () {
             var y = event.point === undefined ? null : event.point.y;
             var keys = ['plateifu', 'image', 'imwidth', 'imheight', 'mousecoords', 'type', 'x', 'y'];
             var form = m.utils.buildForm(keys, this.plateifu, this.image, this.olmap.imwidth, this.olmap.imheight, mousecoords, maptype, x, y);
-            var _this = this;
 
             // send the form data
-            $.post(Flask.url_for('galaxy_page.getspaxel'), form, 'json').done(function (data) {
-                if (data.result.status !== -1) {
-                    _this.updateSpaxel(data.result.spectra, data.result.specmsg);
-                } else {
-                    _this.updateSpecMsg('Error: ' + data.result.specmsg, data.result.status);
+            Promise.resolve($.post(Flask.url_for('galaxy_page.getspaxel'), form, 'json')).then(function (data) {
+                if (data.result.status === -1) {
+                    throw new SpaxelError('Error: ' + data.result.specmsg);
                 }
-            }).fail(function (data) {
-                _this.updateSpecMsg('Error: ' + data.result.specmsg, data.result.status);
+                _this4.updateSpaxel(data.result.spectra, data.result.specmsg);
+            }).catch(function (error) {
+                var errmsg = error.message === undefined ? _this4.makeError('getSpaxel') : error.message;
+                _this4.updateSpecMsg(errmsg, -1);
             });
         }
 
@@ -770,6 +830,7 @@ var Galaxy = function () {
     }, {
         key: 'initDynamic',
         value: function initDynamic(event) {
+            var _this5 = this;
 
             var _this = event.data;
 
@@ -792,81 +853,38 @@ var Galaxy = function () {
                     var form = m.utils.buildForm(keys, _this.plateifu, _this.toggleon);
                     _this.toggleload.show();
 
-                    $.post(Flask.url_for('galaxy_page.initdynamic'), form, 'json').done(function (data) {
+                    // send the form data
+                    Promise.resolve($.post(Flask.url_for('galaxy_page.initdynamic'), form, 'json')).then(function (data) {
+                        if (data.result.error) {
+                            var err = data.result.error;
+                            throw new SpaxelError('Error : ' + err);
+                        }
+                        if (data.result.specstatus === -1) {
+                            throw new SpaxelError('Error: ' + data.result.specmsg);
+                        }
+                        if (data.result.mapstatus === -1) {
+                            throw new MapError('Error: ' + data.result.mapmsg);
+                        }
 
                         var image = data.result.image;
                         var spaxel = data.result.spectra;
                         var spectitle = data.result.specmsg;
                         var maps = data.result.maps;
                         var mapmsg = data.result.mapmsg;
-
                         // Load the Galaxy Image
                         _this.initOpenLayers(image);
                         _this.toggleload.hide();
 
-                        // Try to load the spaxel
-                        if (data.result.specstatus !== -1) {
-                            _this.loadSpaxel(spaxel, spectitle);
-                        } else {
-                            _this.updateSpecMsg('Error: ' + spectitle, data.result.specstatus);
-                        }
-
-                        // Try to load the Maps
-                        if (data.result.mapstatus !== -1) {
-                            _this.initHeatmap(maps);
-                        } else {
-                            _this.updateMapMsg('Error: ' + mapmsg, data.result.mapstatus);
-                        }
-                    }).fail(function (data) {
-                        _this.updateSpecMsg('Error: ' + data.result.specmsg, data.result.specstatus);
-                        _this.updateMapMsg('Error: ' + data.result.mapmsg, data.result.mapstatus);
-                        _this.toggleload.hide();
+                        // Load the Spaxel and Maps
+                        _this.loadSpaxel(spaxel, spectitle);
+                        _this.initHeatmap(maps);
+                        // refresh the map selectpicker
+                        _this.dapselect.selectpicker('refresh');
+                    }).catch(function (error) {
+                        var errmsg = error.message === undefined ? _this5.makeError('initDynamic') : error.message;
+                        _this.updateSpecMsg(errmsg, -1);
+                        _this.updateMapMsg(errmsg, -1);
                     });
-                }
-            }
-        }
-
-        // Toggle the interactive OpenLayers map and Dygraph spectra
-        // DEPRECATED - REMOVE
-
-    }, {
-        key: 'toggleInteract',
-        value: function toggleInteract(image, maps, spaxel, spectitle, mapmsg) {
-            if (this.togglediv.hasClass('active')) {
-                // Turning Off
-                this.toggleon = false;
-                this.togglediv.toggleClass('btn-danger').toggleClass('btn-success');
-                this.togglediv.button('reset');
-                this.dynamicdiv.hide();
-                this.staticdiv.show();
-            } else {
-                // Turning On
-                this.toggleon = true;
-                this.togglediv.toggleClass('btn-danger').toggleClass('btn-success');
-                this.togglediv.button('complete');
-                this.staticdiv.hide();
-                this.dynamicdiv.show();
-
-                // check for empty divs
-                var specempty = this.graphdiv.is(':empty');
-                var imageempty = this.imagediv.is(':empty');
-                var mapempty = this.mapdiv.is(':empty');
-                // load the spaxel if the div is initially empty;
-                if (this.graphdiv !== undefined && specempty) {
-                    this.loadSpaxel(spaxel, spectitle);
-                }
-                // load the image if div is empty
-                if (imageempty) {
-                    this.initOpenLayers(image);
-                }
-                // load the map if div is empty
-                if (mapempty) {
-                    this.initHeatmap(maps);
-                }
-
-                // possibly update an initial map message
-                if (mapmsg !== null) {
-                    this.updateMapMsg(mapmsg, -1);
                 }
             }
         }
@@ -911,16 +929,15 @@ var Galaxy = function () {
             $(this).button('loading');
 
             // send the form data
-            $.post(Flask.url_for('galaxy_page.updatemaps'), form, 'json').done(function (data) {
-                if (data.result.status !== -1) {
-                    _this.dapmapsbut.button('reset');
-                    _this.initHeatmap(data.result.maps);
-                } else {
-                    _this.updateMapMsg('Error: ' + data.result.mapmsg, data.result.status);
-                    _this.dapmapsbut.button('reset');
+            Promise.resolve($.post(Flask.url_for('galaxy_page.updatemaps'), form, 'json')).then(function (data) {
+                if (data.result.status === -1) {
+                    throw new MapError('Error: ' + data.result.mapmsg);
                 }
-            }).fail(function (data) {
-                _this.updateMapMsg('Error: ' + data.result.mapmsg, data.result.status);
+                _this.dapmapsbut.button('reset');
+                _this.initHeatmap(data.result.maps);
+            }).catch(function (error) {
+                var errmsg = error.message === undefined ? _this.makeError('getDapMaps') : error.message;
+                _this.updateMapMsg(errmsg, -1);
                 _this.dapmapsbut.button('reset');
             });
         }
@@ -934,6 +951,7 @@ var Galaxy = function () {
             if (status !== undefined && status === -1) {
                 this.mapmsg.show();
             }
+            mapmsg = mapmsg.replace('<', '').replace('>', '');
             var newmsg = '<strong>' + mapmsg + '</strong>';
             this.mapmsg.empty();
             this.mapmsg.html(newmsg);
@@ -973,20 +991,20 @@ var Galaxy = function () {
             var nsaempty = _this.nsaplots.is(':empty');
             if (nsaempty & _this.hasnsa) {
                 // send the form data
-                $.post(Flask.url_for('galaxy_page.initnsaplot'), form, 'json').done(function (data) {
-                    if (data.result.status !== -1) {
-                        _this.addNSAData(data.result.nsa);
-                        _this.refreshNSASelect(data.result.nsachoices);
-                        _this.initNSAScatter();
-                        _this.setTableEvents();
-                        _this.addNSAEvents();
-                        _this.initNSABoxPlot(data.result.nsaplotcols);
-                        _this.nsaload.hide();
-                    } else {
-                        _this.updateNSAMsg('Error: ' + data.result.nsamsg, data.result.status);
+                Promise.resolve($.post(Flask.url_for('galaxy_page.initnsaplot'), form, 'json')).then(function (data) {
+                    if (data.result.status !== 1) {
+                        throw new Error('Error: ' + data.result.nsamsg);
                     }
-                }).fail(function (data) {
-                    _this.updateNSAMsg('Error: ' + data.result.nsamsg, data.result.status);
+                    _this.addNSAData(data.result.nsa);
+                    _this.refreshNSASelect(data.result.nsachoices);
+                    _this.initNSAScatter();
+                    _this.setTableEvents();
+                    _this.addNSAEvents();
+                    _this.initNSABoxPlot(data.result.nsaplotcols);
+                    _this.nsaload.hide();
+                }).catch(function (error) {
+                    var errmsg = error.message === undefined ? _this.makeError('displayNSA') : error.message;
+                    _this.updateNSAMsg(errmsg, -1);
                 });
             }
         }
@@ -1017,8 +1035,10 @@ var Galaxy = function () {
     }, {
         key: 'updateNSAData',
         value: function updateNSAData(index, type) {
-            var data, options;
-            var _this = this;
+            var _this6 = this;
+
+            var data = void 0,
+                options = void 0;
             if (type === 'galaxy') {
                 var x = this.mygalaxy[this.nsachoices[index].x];
                 var y = this.mygalaxy[this.nsachoices[index].y];
@@ -1029,17 +1049,19 @@ var Galaxy = function () {
                     title: this.nsachoices[index].title, galaxy: { name: this.plateifu }, xrev: xrev,
                     yrev: yrev };
             } else if (type === 'sample') {
-                var x = this.nsasample[this.nsachoices[index].x];
-                var y = this.nsasample[this.nsachoices[index].y];
-                data = [];
-                $.each(x, function (index, value) {
-                    if (value > -9999 && y[index] > -9999) {
-                        var tmp = { 'name': _this.nsasample.plateifu[index], 'x': value, 'y': y[index] };
-                        data.push(tmp);
-                    }
-                });
-                options = { xtitle: this.nsachoices[index].xtitle, ytitle: this.nsachoices[index].ytitle,
-                    title: this.nsachoices[index].title, altseries: { name: 'Sample' } };
+                (function () {
+                    var x = _this6.nsasample[_this6.nsachoices[index].x];
+                    var y = _this6.nsasample[_this6.nsachoices[index].y];
+                    data = [];
+                    $.each(x, function (index, value) {
+                        if (value > -9999 && y[index] > -9999) {
+                            var tmp = { 'name': _this6.nsasample.plateifu[index], 'x': value, 'y': y[index] };
+                            data.push(tmp);
+                        }
+                    });
+                    options = { xtitle: _this6.nsachoices[index].xtitle, ytitle: _this6.nsachoices[index].ytitle,
+                        title: _this6.nsachoices[index].title, altseries: { name: 'Sample' } };
+                })();
             }
             return [data, options];
         }
@@ -1049,23 +1071,24 @@ var Galaxy = function () {
     }, {
         key: 'setTableEvents',
         value: function setTableEvents() {
+            var _this7 = this;
+
             var tabledata = this.nsatable.bootstrapTable('getData');
-            var _this = this;
 
             $.each(this.nsamovers, function (index, mover) {
                 var id = mover.id;
-                $('#' + id).on('dragstart', _this, _this.dragStart);
-                $('#' + id).on('dragover', _this, _this.dragOver);
-                $('#' + id).on('drop', _this, _this.moverDrop);
+                $('#' + id).on('dragstart', _this7, _this7.dragStart);
+                $('#' + id).on('dragover', _this7, _this7.dragOver);
+                $('#' + id).on('drop', _this7, _this7.moverDrop);
             });
 
             this.nsatable.on('page-change.bs.table', function () {
                 $.each(tabledata, function (index, row) {
                     var mover = row[0];
                     var id = $(mover).attr('id');
-                    $('#' + id).on('dragstart', _this, _this.dragStart);
-                    $('#' + id).on('dragover', _this, _this.dragOver);
-                    $('#' + id).on('drop', _this, _this.moverDrop);
+                    $('#' + id).on('dragstart', _this7, _this7.dragStart);
+                    $('#' + id).on('dragover', _this7, _this7.dragOver);
+                    $('#' + id).on('drop', _this7, _this7.moverDrop);
                 });
             });
         }
@@ -1075,7 +1098,9 @@ var Galaxy = function () {
     }, {
         key: 'addNSAEvents',
         value: function addNSAEvents() {
-            var _this = this;
+            var _this8 = this;
+
+            //let _this = this;
             // NSA plot events
             this.nsaplots = $('.marvinplot');
             $.each(this.nsaplots, function (index, plot) {
@@ -1083,12 +1108,12 @@ var Galaxy = function () {
                 var highx = $('#' + id).find('.highcharts-xaxis');
                 var highy = $('#' + id).find('.highcharts-yaxis');
 
-                highx.on('dragover', _this, _this.dragOver);
-                highx.on('dragenter', _this, _this.dragEnter);
-                highx.on('drop', _this, _this.dropElement);
-                highy.on('dragover', _this, _this.dragOver);
-                highy.on('dragenter', _this, _this.dragEnter);
-                highy.on('drop', _this, _this.dropElement);
+                highx.on('dragover', _this8, _this8.dragOver);
+                highx.on('dragenter', _this8, _this8.dragEnter);
+                highx.on('drop', _this8, _this8.dropElement);
+                highy.on('dragover', _this8, _this8.dragOver);
+                highy.on('dragenter', _this8, _this8.dragEnter);
+                highy.on('drop', _this8, _this8.dropElement);
             });
         }
 
@@ -1119,11 +1144,12 @@ var Galaxy = function () {
     }, {
         key: 'createD3data',
         value: function createD3data() {
+            var _this9 = this;
+
             var data = [];
-            var _this = this;
-            $.each(this.nsaplotcols, function (index, column) {
-                var goodsample = _this.nsasample[column].filter(_this.filterArray);
-                var tmp = { 'value': _this.mygalaxy[column], 'title': column, 'sample': goodsample };
+            this.nsaplotcols.forEach(function (column, index) {
+                var goodsample = _this9.nsasample[column].filter(_this9.filterArray);
+                var tmp = { 'value': _this9.mygalaxy[column], 'title': column, 'sample': goodsample };
                 data.push(tmp);
             });
             return data;
@@ -1142,7 +1168,8 @@ var Galaxy = function () {
             }
 
             // generate the data format
-            var data, options;
+            var data = void 0,
+                options = void 0;
             data = this.createD3data();
             this.nsad3box = new BoxWhisker(this.nsaboxdiv, data, options);
         }
@@ -1161,7 +1188,8 @@ var Galaxy = function () {
     }, {
         key: 'initNSAScatter',
         value: function initNSAScatter(parentid) {
-            var _this = this;
+            var _this10 = this;
+
             // only update the single parent div element
             if (parentid !== undefined) {
                 var parentdiv = this.maindiv.find('#' + parentid);
@@ -1177,27 +1205,27 @@ var Galaxy = function () {
                     sdata = _updateNSAData4[0],
                     soptions = _updateNSAData4[1];
 
-                options['altseries'] = { data: sdata, name: 'Sample' };
+                options.altseries = { data: sdata, name: 'Sample' };
                 this.destroyChart(parentdiv, index);
                 this.nsascatter[index] = new Scatter(parentdiv, data, options);
             } else {
                 // try updating all of them
-                _this.nsascatter = {};
+                this.nsascatter = {};
                 $.each(this.nsaplots, function (index, plot) {
                     var plotdiv = $(plot);
 
-                    var _this$updateNSAData = _this.updateNSAData(index + 1, 'galaxy'),
-                        _this$updateNSAData2 = _slicedToArray(_this$updateNSAData, 2),
-                        data = _this$updateNSAData2[0],
-                        options = _this$updateNSAData2[1];
+                    var _updateNSAData5 = _this10.updateNSAData(index + 1, 'galaxy'),
+                        _updateNSAData6 = _slicedToArray(_updateNSAData5, 2),
+                        data = _updateNSAData6[0],
+                        options = _updateNSAData6[1];
 
-                    var _this$updateNSAData3 = _this.updateNSAData(index + 1, 'sample'),
-                        _this$updateNSAData4 = _slicedToArray(_this$updateNSAData3, 2),
-                        sdata = _this$updateNSAData4[0],
-                        soptions = _this$updateNSAData4[1];
+                    var _updateNSAData7 = _this10.updateNSAData(index + 1, 'sample'),
+                        _updateNSAData8 = _slicedToArray(_updateNSAData7, 2),
+                        sdata = _updateNSAData8[0],
+                        soptions = _updateNSAData8[1];
 
-                    options['altseries'] = { data: sdata, name: 'Sample' };
-                    _this.nsascatter[index + 1] = new Scatter(plotdiv, data, options);
+                    options.altseries = { data: sdata, name: 'Sample' };
+                    _this10.nsascatter[index + 1] = new Scatter(plotdiv, data, options);
                 });
             }
         }
@@ -1372,9 +1400,10 @@ var Galaxy = function () {
 * @Author: Brian Cherinka
 * @Date:   2016-04-26 21:47:05
 * @Last Modified by:   Brian Cherinka
-* @Last Modified time: 2016-10-12 16:44:53
+* @Last Modified time: 2017-04-01 13:09:41
 */
 
+//jshint esversion: 6
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1415,8 +1444,8 @@ var Header = function () {
         value: function initTypeahead(typediv, formdiv, url, fxn) {
 
             var _this = this;
-            var typediv = typediv === undefined ? this.typeahead : $(typediv);
-            var formdiv = formdiv === undefined ? this.galidform : $(formdiv);
+            typediv = typediv === undefined ? this.typeahead : $(typediv);
+            formdiv = formdiv === undefined ? this.galidform : $(formdiv);
             var typeurl = url === undefined ? Flask.url_for('index_page.getgalidlist') : url;
             var afterfxn = fxn === undefined ? null : fxn;
 
@@ -1456,7 +1485,6 @@ var Header = function () {
             var _this = event.data;
             var url = 'index_page.selectmpl';
             var verform = m.utils.serializeForm('#mplform');
-            console.log('setting new mpl', verform);
             _this.sendAjax(verform, url, _this.reloadPage);
         }
 
@@ -1494,10 +1522,11 @@ var Header = function () {
 ;/*
 * @Author: Brian Cherinka
 * @Date:   2016-08-30 11:28:26
-* @Last Modified by:   Brian Cherinka
-* @Last Modified time: 2017-02-18 12:44:32
+ * @Last modified by:   andrews
+ * @Last modified time: 2017-12-13 23:12:53
 */
 
+//jshint esversion: 6
 'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -1509,7 +1538,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var HeatMap = function () {
 
     // Constructor
-    function HeatMap(mapdiv, data, title, galthis) {
+    function HeatMap(mapdiv, data, title, plotparams, galthis) {
         _classCallCheck(this, HeatMap);
 
         if (data === undefined) {
@@ -1520,6 +1549,7 @@ var HeatMap = function () {
             this.mapdiv = mapdiv; // div element for map
             this.data = data; // map data
             this.title = title; // map title
+            this.plotparams = plotparams; // default plotting parameters
             this.galthis = galthis; //the self of the Galaxy class
             this.parseTitle();
             this.initMap();
@@ -1527,20 +1557,20 @@ var HeatMap = function () {
         }
     }
 
+    // test print
+
+
     _createClass(HeatMap, [{
         key: 'print',
-
-
-        // test print
         value: function print() {
             console.log('We are now printing heatmap for ', this.title);
         }
-    }, {
-        key: 'parseTitle',
-
 
         // Parse the heatmap title into category, parameter, channel
         // e.g. 7443-1901: emline_gflux_ha-6564
+
+    }, {
+        key: 'parseTitle',
         value: function parseTitle() {
             var _title$split = this.title.split(':'),
                 _title$split2 = _slicedToArray(_title$split, 2),
@@ -1561,9 +1591,9 @@ var HeatMap = function () {
     }, {
         key: 'getRange',
         value: function getRange() {
-            var xylength = this.data['values'].length;
+            var xylength = this.data.values.length;
             var xyrange = Array.apply(null, { length: xylength }).map(Number.call, Number);
-            var zrange = [].concat.apply([], this.data['values']);
+            var zrange = [].concat.apply([], this.data.values);
             return [xyrange, zrange];
         }
 
@@ -1601,40 +1631,40 @@ var HeatMap = function () {
             for (var ii = 0; ii < values.length; ii++) {
                 for (var jj = 0; jj < values.length; jj++) {
                     var val = values[ii][jj];
+                    var noData = void 0,
+                        badData = void 0;
+                    var signalToNoise = void 0,
+                        signalToNoiseThreshold = void 0;
 
                     if (mask !== null) {
-                        var noValue = mask[ii][jj] && Math.pow(2, 0);
-                        var badValue = mask[ii][jj] && Math.pow(2, 5);
-                        var mathError = mask[ii][jj] && Math.pow(2, 6);
-                        var badFit = mask[ii][jj] && Math.pow(2, 7);
-                        var doNotUse = mask[ii][jj] && Math.pow(2, 30);
-                        //var noData = (noValue || badValue || mathError || badFit || doNotUse);
-                        var noData = noValue;
-                        var badData = badValue || mathError || badFit || doNotUse;
+                        var bitmasks = this.plotparams["bits"];
+                        noData = mask[ii][jj] & Math.pow(2, bitmasks["nocov"]);
+                        badData = false;
+                        for (var key in bitmasks["badData"]) {
+                            badData = badData || mask[ii][jj] & Math.pow(2, bitmasks["badData"][key]);
+                        }
                     } else {
-                        noData == null;
-                        badData == null;
+                        noData = null;
+                        badData = null;
                     }
-
+                    signalToNoiseThreshold = this.plotparams["snr_min"];
                     if (ivar !== null) {
-                        var signalToNoise = Math.abs(val) * Math.sqrt(ivar[ii][jj]);
-                        var signalToNoiseThreshold = 1.;
+                        signalToNoise = Math.abs(val) * Math.sqrt(ivar[ii][jj]);
                     }
 
                     // value types
                     // val=no-data => gray color
                     // val=null => hatch area
-                    // val=low-sn => nothing at the moment
 
                     if (noData) {
-                        // for data that is outside the range "nocov" mask
+                        // for data that is outside the range "NOCOV" mask
                         val = 'no-data';
                     } else if (badData) {
                         // for data that is bad - masked in some way
                         val = null;
                     } else if (ivar !== null && signalToNoise < signalToNoiseThreshold) {
                         // for data that is low S/N
-                        val = null; //val = 'low-sn';
+                        val = null;
                     } else if (ivar === null) {
                         // for data with no mask or no inverse variance extensions
                         if (this.title.search('binid') !== -1) {
@@ -1644,11 +1674,11 @@ var HeatMap = function () {
                             // set zero values to no-data
                             val = 'no-data';
                         }
-                    };
+                    }
                     // need to push as jj, ii since the numpy 2-d arrays are y, x based (row, col)
                     xyz.push([jj, ii, val]);
-                };
-            };
+                }
+            }
             return xyz;
         }
     }, {
@@ -1674,15 +1704,15 @@ var HeatMap = function () {
 
             var RdBuHex = ['#053061', '#063264', '#073467', '#08366a', '#09386d', '#0a3b70', '#0c3d73', '#0d3f76', '#0e4179', '#0f437b', '#10457e', '#114781', '#124984', '#134c87', '#144e8a', '#15508d', '#175290', '#185493', '#195696', '#1a5899', '#1b5a9c', '#1c5c9f', '#1d5fa2', '#1e61a5', '#1f63a8', '#2065ab', '#2267ac', '#2369ad', '#246aae', '#266caf', '#276eb0', '#2870b1', '#2a71b2', '#2b73b3', '#2c75b4', '#2e77b5', '#2f79b5', '#307ab6', '#327cb7', '#337eb8', '#3480b9', '#3681ba', '#3783bb', '#3885bc', '#3a87bd', '#3b88be', '#3c8abe', '#3e8cbf', '#3f8ec0', '#408fc1', '#4291c2', '#4393c3', '#4695c4', '#4997c5', '#4c99c6', '#4f9bc7', '#529dc8', '#569fc9', '#59a1ca', '#5ca3cb', '#5fa5cd', '#62a7ce', '#65a9cf', '#68abd0', '#6bacd1', '#6eaed2', '#71b0d3', '#75b2d4', '#78b4d5', '#7bb6d6', '#7eb8d7', '#81bad8', '#84bcd9', '#87beda', '#8ac0db', '#8dc2dc', '#90c4dd', '#93c6de', '#96c7df', '#98c8e0', '#9bc9e0', '#9dcbe1', '#a0cce2', '#a2cde3', '#a5cee3', '#a7d0e4', '#a9d1e5', '#acd2e5', '#aed3e6', '#b1d5e7', '#b3d6e8', '#b6d7e8', '#b8d8e9', '#bbdaea', '#bddbea', '#c0dceb', '#c2ddec', '#c5dfec', '#c7e0ed', '#cae1ee', '#cce2ef', '#cfe4ef', '#d1e5f0', '#d2e6f0', '#d4e6f1', '#d5e7f1', '#d7e8f1', '#d8e9f1', '#dae9f2', '#dbeaf2', '#ddebf2', '#deebf2', '#e0ecf3', '#e1edf3', '#e3edf3', '#e4eef4', '#e6eff4', '#e7f0f4', '#e9f0f4', '#eaf1f5', '#ecf2f5', '#edf2f5', '#eff3f5', '#f0f4f6', '#f2f5f6', '#f3f5f6', '#f5f6f7', '#f6f7f7', '#f7f6f6', '#f7f5f4', '#f8f4f2', '#f8f3f0', '#f8f2ef', '#f8f1ed', '#f9f0eb', '#f9efe9', '#f9eee7', '#f9ede5', '#f9ebe3', '#faeae1', '#fae9df', '#fae8de', '#fae7dc', '#fbe6da', '#fbe5d8', '#fbe4d6', '#fbe3d4', '#fce2d2', '#fce0d0', '#fcdfcf', '#fcdecd', '#fdddcb', '#fddcc9', '#fddbc7', '#fdd9c4', '#fcd7c2', '#fcd5bf', '#fcd3bc', '#fbd0b9', '#fbceb7', '#fbccb4', '#facab1', '#fac8af', '#f9c6ac', '#f9c4a9', '#f9c2a7', '#f8bfa4', '#f8bda1', '#f8bb9e', '#f7b99c', '#f7b799', '#f7b596', '#f6b394', '#f6b191', '#f6af8e', '#f5ac8b', '#f5aa89', '#f5a886', '#f4a683', '#f3a481', '#f2a17f', '#f19e7d', '#f09c7b', '#ef9979', '#ee9677', '#ec9374', '#eb9172', '#ea8e70', '#e98b6e', '#e8896c', '#e6866a', '#e58368', '#e48066', '#e37e64', '#e27b62', '#e17860', '#df765e', '#de735c', '#dd7059', '#dc6e57', '#db6b55', '#da6853', '#d86551', '#d7634f', '#d6604d', '#d55d4c', '#d35a4a', '#d25849', '#d05548', '#cf5246', '#ce4f45', '#cc4c44', '#cb4942', '#c94741', '#c84440', '#c6413e', '#c53e3d', '#c43b3c', '#c2383a', '#c13639', '#bf3338', '#be3036', '#bd2d35', '#bb2a34', '#ba2832', '#b82531', '#b72230', '#b61f2e', '#b41c2d', '#b3192c', '#b1182b', '#ae172a', '#ab162a', '#a81529', '#a51429', '#a21328', '#9f1228', '#9c1127', '#991027', '#960f27', '#930e26', '#900d26', '#8d0c25', '#8a0b25', '#870a24', '#840924', '#810823', '#7f0823', '#7c0722', '#790622', '#760521', '#730421', '#700320', '#6d0220', '#6a011f', '#67001f'];
 
-            if (cmap === "linearLab") {
+            if (cmap === "linearlab") {
                 return linearLabHex;
             } else if (cmap === "inferno") {
                 return infernoHex;
-            } else if (cmap === "RdBu") {
+            } else if (cmap === "RdBu_r") {
                 return RdBuHex;
             } else {
                 return ["#000000", "#FFFFFF"];
-            };
+            }
         }
     }, {
         key: 'setColorStops',
@@ -1692,13 +1722,21 @@ var HeatMap = function () {
             var colormap = new Array(stopLocations);
             for (var ii = 0; ii < stopLocations; ii++) {
                 colormap[ii] = [ii / (stopLocations - 1), colorHex[ii]];
-            };
+            }
             return colormap;
         }
     }, {
         key: 'quantileClip',
         value: function quantileClip(range) {
-            var quantLow, quantHigh, zQuantLow, zQuantHigh;
+            var quantLow = void 0,
+                quantHigh = void 0,
+                zQuantLow = void 0,
+                zQuantHigh = void 0;
+
+            var _plotparams$percentil = _slicedToArray(this.plotparams["percentile_clip"], 2);
+
+            quantLow = _plotparams$percentil[0];
+            quantHigh = _plotparams$percentil[1];
 
             var _getMinMax = this.getMinMax(range);
 
@@ -1706,14 +1744,6 @@ var HeatMap = function () {
 
             zQuantLow = _getMinMax2[0];
             zQuantHigh = _getMinMax2[1];
-
-            if (this.title.toLowerCase().indexOf("vel") >= 0 || this.title.toLowerCase().indexOf("sigma") >= 0) {
-                quantLow = 10;
-                quantHigh = 90;
-            } else if (this.title.toLowerCase().indexOf("flux") >= 0) {
-                quantLow = 5;
-                quantHigh = 95;
-            };
 
             if (range.length > 0) {
                 if (quantLow > 0) {
@@ -1735,8 +1765,9 @@ var HeatMap = function () {
             var _galthis = this.galthis;
 
             // get the ranges
-            //var range  = this.getXRange();
-            var xyrange, zrange;
+            //let range  = this.getXRange();
+            var xyrange = void 0,
+                zrange = void 0;
 
             // get the min and max of the ranges
             var _getRange = this.getRange();
@@ -1745,7 +1776,10 @@ var HeatMap = function () {
 
             xyrange = _getRange2[0];
             zrange = _getRange2[1];
-            var xymin, xymax, zmin, zmax;
+            var xymin = void 0,
+                xymax = void 0,
+                zmin = void 0,
+                zmax = void 0;
 
             var _getMinMax3 = this.getMinMax(xyrange);
 
@@ -1776,17 +1810,14 @@ var HeatMap = function () {
             zmax = _quantileClip2[1];
 
 
-            if (this.title.toLowerCase().indexOf("vel") >= 0) {
-                var cmap = "RdBu";
-                // make velocity maps symmetric
+            var cmap = this.plotparams["cmap"];
+
+            // make color bar symmetric
+            if (this.plotparams["symmetric"]) {
                 var zabsmax = Math.max.apply(null, [Math.abs(zmin), Math.abs(zmax)]);
                 zmin = -zabsmax;
                 zmax = zabsmax;
-            } else if (this.title.toLowerCase().indexOf("sigma") >= 0) {
-                var cmap = "inferno";
-            } else {
-                var cmap = "linearLab";
-            };
+            }
 
             var cstops = this.setColorStops(cmap);
 
@@ -1801,7 +1832,10 @@ var HeatMap = function () {
                     plotBackgroundColor: '#A8A8A8'
                 },
                 credits: { enabled: false },
-                title: { text: this.title },
+                title: {
+                    text: this.title.replace(/[_]/g, " "),
+                    style: { fontSize: "14px" }
+                },
                 navigation: {
                     buttonOptions: {
                         theme: { fill: null }
@@ -1894,9 +1928,10 @@ var HeatMap = function () {
 * @Author: Brian Cherinka
 * @Date:   2016-04-13 11:24:07
 * @Last Modified by:   Brian Cherinka
-* @Last Modified time: 2016-12-14 15:46:11
+* @Last Modified time: 2017-04-28 10:24:41
 */
 
+//jshint esversion: 6
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1926,7 +1961,7 @@ var Marvin = function () {
 
         // check the browser on page load
         this.window = $(window);
-        this.window.on('load', this.checkBrowser);
+        // this.window.on('load', this.checkBrowser);
     }
 
     // sets the Sentry raven for monitoring
@@ -1949,8 +1984,8 @@ var Marvin = function () {
         key: 'checkBrowser',
         value: function checkBrowser(event) {
             var _this = event.data;
-            if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
-                m.utils.marvinBanner('We have detected that you are using Safari. Some features may not work as expected. We recommend using Chrome or Firefox.', 1, 'safari_banner', 'https://api.sdss.org/doc/manga/marvin/known_issues.html#known-browser');
+            if (!!navigator.userAgent.match(/Version\/[\d\.]+.*Safari/)) {
+                m.utils.marvinBanner('We have detected that you are using Safari. Some features may not work as expected. We recommend using Chrome or Firefox.', 1, 'safari_banner', 'http://sdss-marvin.readthedocs.io/en/latest/known-issues.html#known-browser');
             }
         }
     }]);
@@ -1960,14 +1995,14 @@ var Marvin = function () {
 ;/*
 * @Author: Brian Cherinka
 * @Date:   2016-04-13 17:38:25
-* @Last Modified by:   Brian
-* @Last Modified time: 2016-04-26 18:12:18
+* @Last Modified by:   Brian Cherinka
+* @Last Modified time: 2017-04-01 01:43:36
 */
 
 //
 // Javascript object handling all things related to OpenLayers Map
 //
-
+//jshint esversion: 6
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1994,30 +2029,30 @@ var OLMap = function () {
         }
     }
 
+    // test print
+
+
     _createClass(OLMap, [{
         key: 'print',
-
-
-        // test print
         value: function print() {
             console.log('We are now printing openlayers map');
         }
-    }, {
-        key: 'getImageSize',
-
 
         // Get the natural size of the input static image
+
+    }, {
+        key: 'getImageSize',
         value: function getImageSize() {
             if (this.staticimdiv !== undefined) {
                 this.imwidth = this.staticimdiv.naturalWidth;
                 this.imheight = this.staticimdiv.naturalHeight;
             }
         }
-    }, {
-        key: 'setMouseControl',
-
 
         // Set the mouse position control
+
+    }, {
+        key: 'setMouseControl',
         value: function setMouseControl() {
             var mousePositionControl = new ol.control.MousePosition({
                 coordinateFormat: ol.coordinate.createStringXY(4),
@@ -2029,11 +2064,11 @@ var OLMap = function () {
             });
             return mousePositionControl;
         }
-    }, {
-        key: 'setProjection',
-
 
         // Set the image Projection
+
+    }, {
+        key: 'setProjection',
         value: function setProjection() {
             this.extent = [0, 0, this.imwidth, this.imheight];
             this.projection = new ol.proj.Projection({
@@ -2042,11 +2077,11 @@ var OLMap = function () {
                 extent: this.extent
             });
         }
-    }, {
-        key: 'setBaseImageLayer',
-
 
         // Set the base image Layer
+
+    }, {
+        key: 'setBaseImageLayer',
         value: function setBaseImageLayer() {
             var imagelayer = new ol.layer.Image({
                 source: new ol.source.ImageStatic({
@@ -2057,11 +2092,11 @@ var OLMap = function () {
             });
             return imagelayer;
         }
-    }, {
-        key: 'setView',
-
 
         // Set the image View
+
+    }, {
+        key: 'setView',
         value: function setView() {
             this.view = new ol.View({
                 projection: this.projection,
@@ -2071,11 +2106,11 @@ var OLMap = function () {
                 maxResolution: 1.4
             });
         }
-    }, {
-        key: 'initMap',
-
 
         // Initialize the Map
+
+    }, {
+        key: 'initMap',
         value: function initMap() {
             var mousePositionControl = this.setMouseControl();
             var baseimage = this.setBaseImageLayer();
@@ -2090,14 +2125,14 @@ var OLMap = function () {
                 view: this.view
             });
         }
-    }, {
-        key: 'addDrawInteraction',
-
 
         // Add a Draw Interaction
+
+    }, {
+        key: 'addDrawInteraction',
         value: function addDrawInteraction() {
             // set up variable for last saved feature & vector source for point
-            var lastFeature;
+            var lastFeature = void 0;
             var drawsource = new ol.source.Vector({ wrapX: false });
             // create new point vectorLayer
             var pointVector = this.newVectorLayer(drawsource);
@@ -2106,7 +2141,8 @@ var OLMap = function () {
 
             // New draw event ; default to Point
             var value = 'Point';
-            var geometryFunction, maxPoints;
+            var geometryFunction = void 0,
+                maxPoints = void 0;
             this.draw = new ol.interaction.Draw({
                 source: drawsource,
                 type: /** @type {ol.geom.GeometryType} */value,
@@ -2125,11 +2161,11 @@ var OLMap = function () {
             // add draw interaction onto the map
             this.map.addInteraction(this.draw);
         }
-    }, {
-        key: 'newVectorLayer',
-
 
         // New Vector Layer
+
+    }, {
+        key: 'newVectorLayer',
         value: function newVectorLayer(source) {
             // default set to Point, but eventually expand this to different vector layer types
             var vector = new ol.layer.Vector({
@@ -2160,9 +2196,10 @@ var OLMap = function () {
 * @Author: Brian Cherinka
 * @Date:   2016-12-09 01:38:32
 * @Last Modified by:   Brian Cherinka
-* @Last Modified time: 2016-12-15 13:27:14
+* @Last Modified time: 2017-04-01 01:03:57
 */
 
+//jshint esversion: 6
 'use strict';
 
 // Creates a Scatter Plot Highcharts Object
@@ -2375,9 +2412,10 @@ var Scatter = function () {
 * @Author: Brian Cherinka
 * @Date:   2016-05-13 13:26:21
 * @Last Modified by:   Brian Cherinka
-* @Last Modified time: 2017-01-18 21:02:39
+* @Last Modified time: 2017-06-28 11:59:04
 */
 
+//jshint esversion: 6
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -2395,6 +2433,17 @@ var Search = function () {
         this.returnparams = $('#returnparams');
         this.parambox = $('#parambox');
         this.searchbox = $("#searchbox");
+
+        this.builder = $('#builder');
+        this.sqlalert = $('#sqlalert');
+        this.getsql = $('#get-sql');
+        this.resetsql = $('#reset-sql');
+        this.runsql = $('#run-sql');
+
+        // Event Handlers
+        this.getsql.on('click', this, this.getSQL);
+        this.resetsql.on('click', this, this.resetSQL);
+        this.runsql.on('click', this, this.runSQL);
     }
 
     // Print
@@ -2428,11 +2477,12 @@ var Search = function () {
         value: function initTypeahead(typediv, formdiv, url, fxn) {
 
             var _this = this;
-            var typediv = typediv === undefined ? this.typeahead : $(typediv);
-            var formdiv = formdiv === undefined ? this.searchform : $(formdiv);
+            var typeurl = void 0;
+            typediv = typediv === undefined ? this.typeahead : $(typediv);
+            formdiv = formdiv === undefined ? this.searchform : $(formdiv);
             // get the typeahead search page getparams url
             try {
-                var typeurl = url === undefined ? Flask.url_for('search_page.getparams', { 'paramdisplay': 'best' }) : url;
+                typeurl = url === undefined ? Flask.url_for('search_page.getparams', { 'paramdisplay': 'best' }) : url;
             } catch (error) {
                 Raven.captureException(error);
                 console.error('Error getting search getparams url:', error);
@@ -2478,6 +2528,8 @@ var Search = function () {
                 matcher: function matcher(item) {
                     // used to determined if a query matches an item
                     var tquery = _this.extractor(this.query);
+                    console.log('query', this.query);
+                    console.log(tquery);
                     if (!tquery) return false;
                     return ~item.toLowerCase().indexOf(tquery.toLowerCase());
                 },
@@ -2491,6 +2543,64 @@ var Search = function () {
                 }
             });
         }
+
+        // Setup Query Builder
+
+    }, {
+        key: 'setupQB',
+        value: function setupQB(params) {
+            $('.modal-dialog').draggable(); // makes the modal dialog draggable
+            this.builder.queryBuilder({ plugins: ['bt-selectpicker', 'not-group', 'invert'], filters: params,
+                operators: ['equal', 'not_equal', 'less', 'less_or_equal', 'greater', 'greater_or_equal', 'between', 'contains', 'begins_with', 'ends_with'] });
+        }
+
+        // Get the SQL from the QB
+
+    }, {
+        key: 'getSQL',
+        value: function getSQL(event) {
+            var _this = event.data;
+            try {
+                var result = _this.builder.queryBuilder('getSQL', false);
+                if (result.sql.length) {
+                    _this.sqlalert.html("");
+                    // remove the quotations
+                    var newsql = result.sql.replace(/[']+/g, "");
+                    // replace any like and percents with = and *
+                    var likeidx = newsql.indexOf('LIKE');
+                    if (likeidx !== -1) {
+                        newsql = newsql.replace('LIKE(', '= ').replace(/[%]/g, '*');
+                        var idx = newsql.indexOf(')', likeidx);
+                        newsql = newsql.replace(newsql.charAt(idx), " ");
+                    }
+                    _this.searchbox.val(newsql);
+                }
+            } catch (error) {
+                _this.sqlalert.html("<p class='text-center text-danger'>Must provide valid input.</p>");
+            }
+        }
+
+        // Reset the SQL in SearchBox
+
+    }, {
+        key: 'resetSQL',
+        value: function resetSQL(event) {
+            var _this = event.data;
+            _this.searchbox.val("");
+        }
+
+        // Run the Query from the QB
+
+    }, {
+        key: 'runSQL',
+        value: function runSQL(event) {
+            var _this = event.data;
+            if (_this.searchbox.val() === "") {
+                _this.sqlalert.html("<p class='text-center text-danger'>You must generate SQL first!</p>");
+            } else {
+                _this.searchform.submit();
+            }
+        }
     }]);
 
     return Search;
@@ -2499,9 +2609,10 @@ var Search = function () {
 * @Author: Brian Cherinka
 * @Date:   2016-04-25 13:56:19
 * @Last Modified by:   Brian Cherinka
-* @Last Modified time: 2016-09-09 16:52:45
+* @Last Modified time: 2017-09-28 13:25:11
 */
 
+//jshint esversion: 6
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -2515,6 +2626,10 @@ var Table = function () {
         _classCallCheck(this, Table);
 
         this.setTable(tablediv);
+
+        // Event Handlers
+        this.table.on('load-success.bs.table', this, this.setSuccessMsg);
+        this.table.on('load-error.bs.table', this, this.setErrMsg);
     }
 
     // Print
@@ -2534,6 +2649,9 @@ var Table = function () {
             if (tablediv !== undefined) {
                 console.log('setting the table');
                 this.table = tablediv;
+                this.errdiv = this.table.siblings('#errdiv');
+                this.tableerr = this.errdiv.find('#tableerror');
+                this.tableerr.hide();
             }
         }
 
@@ -2543,16 +2661,20 @@ var Table = function () {
         key: 'initTable',
         value: function initTable(url, data) {
             this.url = url;
+            var cols = void 0;
 
             // if data
             if (data.columns !== null) {
-                var cols = this.makeColumns(data.columns);
+                cols = this.makeColumns(data.columns);
             }
 
+            console.log(data);
+            console.log('cols', cols);
             // init the Bootstrap table
             this.table.bootstrapTable({
                 classes: 'table table-bordered table-condensed table-hover',
                 toggle: 'table',
+                toolbar: '#toolbar',
                 pagination: true,
                 pageSize: 10,
                 pageList: '[10, 20, 50]',
@@ -2563,10 +2685,9 @@ var Table = function () {
                 totalRows: data.total,
                 columns: cols,
                 url: url,
-                search: true,
                 showColumns: true,
                 showToggle: true,
-                sortName: 'cube.mangaid',
+                sortName: 'mangaid',
                 sortOrder: 'asc',
                 formatNoMatches: function formatNoMatches() {
                     return "This table is empty...";
@@ -2574,20 +2695,71 @@ var Table = function () {
             });
         }
 
+        // update the error div with a message
+
+    }, {
+        key: 'updateMsg',
+        value: function updateMsg(msg) {
+            var errmsg = '<strong>' + msg + '</strong>';
+            this.tableerr.html(errmsg);
+            this.tableerr.show();
+        }
+
+        // set a table error message
+
+    }, {
+        key: 'setErrMsg',
+        value: function setErrMsg(event, status, res) {
+            var _this = event.data;
+            var extra = '';
+            if (status === 502) {
+                extra = 'bad server response retrieving web table.  likely uncaught error on server side.  check logs.';
+            }
+            var msg = 'Status ' + status + ' - ' + res.statusText + ': ' + extra;
+            _this.updateMsg(msg);
+        }
+
+        // set a table error message
+
+    }, {
+        key: 'setSuccessMsg',
+        value: function setSuccessMsg(event, data) {
+            var _this = event.data;
+            _this.tableerr.hide();
+            if (data.status === -1) {
+                _this.updateMsg(data.errmsg);
+            }
+        }
+
         // make the Table Columns
 
     }, {
         key: 'makeColumns',
         value: function makeColumns(columns) {
+            var _this2 = this;
+
             var cols = [];
             columns.forEach(function (name, index) {
                 var colmap = {};
-                colmap['field'] = name;
-                colmap['title'] = name;
-                colmap['sortable'] = true;
+                colmap.field = name;
+                colmap.title = name;
+                colmap.sortable = true;
+                if (name.match('plateifu|mangaid')) {
+                    colmap.formatter = _this2.linkformatter;
+                }
                 cols.push(colmap);
             });
             return cols;
+        }
+
+        // Link Formatter
+
+    }, {
+        key: 'linkformatter',
+        value: function linkformatter(value, row, index) {
+            var url = Flask.url_for('galaxy_page.Galaxy:get', { 'galid': value });
+            var link = '<a href=' + url + ' target=\'_blank\'>' + value + '</a>';
+            return link;
         }
 
         // Handle the Bootstrap table JSON response
@@ -2596,20 +2768,18 @@ var Table = function () {
         key: 'handleResponse',
         value: function handleResponse(results) {
             // load the bootstrap table div
-            //console.log(this.table, this.table===null, this);
             if (this.table === null) {
                 this.setTable();
             }
             this.table = $('#table');
-            //console.log('after', this.table, this.table===null, $('#table'));
             // Get new columns
             var cols = results.columns;
-            var cols = [];
+            cols = [];
             results.columns.forEach(function (name, index) {
                 var colmap = {};
-                colmap['field'] = name;
-                colmap['title'] = name;
-                colmap['sortable'] = true;
+                colmap.field = name;
+                colmap.title = name;
+                colmap.sortable = true;
                 cols.push(colmap);
             });
 
@@ -2626,11 +2796,11 @@ var Table = function () {
 * @Author: Brian Cherinka
 * @Date:   2016-04-12 00:10:26
 * @Last Modified by:   Brian Cherinka
-* @Last Modified time: 2016-12-14 15:54:41
+* @Last Modified time: 2017-05-23 17:36:14
 */
 
 // Javascript code for general things
-
+//jshint esversion: 6
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -2710,56 +2880,76 @@ var Utils = function () {
         value: function initInfoPopOvers() {
             $('.infopop [data-toggle="popover"]').popover();
         }
-    }, {
-        key: 'initToolTips',
-
 
         // Initialize tooltips
+
+    }, {
+        key: 'initToolTips',
         value: function initToolTips() {
             $('[data-toggle="tooltip"]').tooltip();
         }
-    }, {
-        key: 'login',
 
+        // Select Choices from a Bootstrap-Select element
+
+    }, {
+        key: 'selectChoices',
+        value: function selectChoices(id, choices) {
+            $(id).selectpicker('val', choices);
+            $(id).selectpicker('refresh');
+        }
+
+        // Reset Choices from a Bootstrap-Select element
+
+    }, {
+        key: 'resetChoices',
+        value: function resetChoices(id) {
+            console.log('reseting in utils', id);
+            var select = typeof id === 'string' ? $(id) : id;
+            select.selectpicker('deselectAll');
+            select.selectpicker('refresh');
+            select.selectpicker('render');
+        }
 
         // Login function
-        value: function login() {
-            var form = $('#loginform').serialize();
-            var _this = this;
 
-            $.post(Flask.url_for('index_page.login'), form, 'json').done(function (data) {
+    }, {
+        key: 'login',
+        value: function login() {
+            var _this2 = this;
+
+            var form = $('#loginform').serialize();
+            Promise.resolve($.post(Flask.url_for('index_page.login'), form, 'json')).then(function (data) {
                 if (data.result.status < 0) {
-                    // bad submit
-                    _this.resetLogin();
-                } else {
-                    // good submit
-                    if (data.result.message !== '') {
-                        var stat = data.result.status === 0 ? 'danger' : 'success';
-                        var htmlstr = "<div class='alert alert-" + stat + "' role='alert'><h4>" + data.result.message + "</h4></div>";
-                        $('#loginmessage').html(htmlstr);
-                    }
-                    if (data.result.status === 1) {
-                        location.reload(true);
-                    }
+                    throw new Error('Bad status login');
                 }
-            }).fail(function (data) {
+                if (data.result.message !== '') {
+                    var stat = data.result.status === 0 ? 'danger' : 'success';
+                    var htmlstr = '<div class=\'alert alert-' + stat + '\' role=\'alert\'><h4>' + data.result.message + '</h4></div>';
+                    $('#loginmessage').html(htmlstr);
+                }
+                if (data.result.status === 1) {
+                    location.reload(true);
+                }
+            }).catch(function (error) {
+                _this2.resetLogin();
                 alert('Bad login attempt');
             });
         }
-    }, {
-        key: 'resetLogin',
-
 
         // Reset Login
+
+    }, {
+        key: 'resetLogin',
         value: function resetLogin() {
+            console.log('reset');
             $('#loginform').trigger('reset');
             $('#loginmessage').empty();
         }
-    }, {
-        key: 'submitLogin',
-
 
         // Submit Login on Keyups
+
+    }, {
+        key: 'submitLogin',
         value: function submitLogin(event) {
             var _this = event.data;
             // login
@@ -2769,20 +2959,20 @@ var Utils = function () {
                 }
             }
         }
-    }, {
-        key: 'marvinBanner',
-
 
         // Shows a banner
+
+    }, {
+        key: 'marvinBanner',
         value: function marvinBanner(text, expiryDays, cookieName, url, urlText) {
 
             var _this = this;
-            var expiryDays = expiryDays === undefined ? 0 : expiryDays;
-            var cookieName = cookieName === undefined ? "marvin_banner_cookie" : cookieName;
-            var url = url === undefined ? "" : url;
-            var urlText = urlText === undefined ? "Learn more" : urlText;
+            expiryDays = expiryDays === undefined ? 0 : expiryDays;
+            cookieName = cookieName === undefined ? "marvin_banner_cookie" : cookieName;
+            url = url === undefined ? "" : url;
+            urlText = urlText === undefined ? "Learn more" : urlText;
 
-            if (urlText == "" || url == "") {
+            if (urlText === "" || url === "") {
                 urlText = "";
                 url = "";
             }
@@ -2808,9 +2998,9 @@ var Utils = function () {
                     "link": urlText }
             });
 
-            if (expiryDays == 0) {
+            if (expiryDays === 0) {
                 document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;path=/;domain=localhost';
-            };
+            }
         }
     }]);
 

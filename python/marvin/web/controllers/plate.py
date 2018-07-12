@@ -14,7 +14,7 @@ from __future__ import print_function
 from __future__ import division
 
 from flask import Blueprint, render_template, request
-from flask_classy import route
+from flask_classful import route
 from marvin.core.exceptions import MarvinError
 from marvin.tools.plate import Plate as mPlate
 from marvin.utils.general import getImagesByPlate
@@ -49,8 +49,8 @@ class Plate(BaseWebView):
 
         # validate the input
         args = av.manual_parse(self, request)
-        self.plate['plateid'] = args.get('plateid', type=int)
-        pinputs = {'plateid': plateid, 'mode': 'local', 'nocubes': True, 'release': self._release}
+        self.plate['plateid'] = args.get('plateid')
+        pinputs = {'plate': plateid, 'mode': 'local', 'nocubes': True, 'release': self._release}
         try:
             plate = mPlate(**pinputs)
         except MarvinError as e:

@@ -1,64 +1,91 @@
-#!/usr/bin/env python
-# encoding: utf-8
+# !usr/bin/env python2
+# -*- coding: utf-8 -*-
 #
-# test_sampledb.py
+# Licensed under a 3-clause BSD license.
 #
-# Created by José Sánchez-Gallego on 6 Dec 2016.
+# @Author: Brian Cherinka
+# @Date:   2017-06-12 18:41:25
+# @Last modified by:   andrews
+# @Last modified time: 2018-03-02 17:03:81
+
+from __future__ import print_function, division, absolute_import
+import pytest
 
 
-from __future__ import division
-from __future__ import print_function
-from __future__ import absolute_import
+@pytest.fixture()
+def nsa_target(maindb, galaxy):
+    nsa = maindb.session.query(maindb.sampledb.NSA).join(maindb.sampledb.MangaTargetToNSA,
+                                                         maindb.sampledb.MangaTarget).\
+        filter(maindb.sampledb.MangaTarget.mangaid == galaxy.mangaid).one()
+    yield (nsa, galaxy.plateifu)
+    nsa = None
 
-import marvin
-import marvin.tests
 
+class TestSampleDB(object):
 
-class TestSampleDB(marvin.tests.MarvinTest):
-    """A series of tests for the SampleModelClasses."""
+    @pytest.mark.parametrize('plateifu, expected',
+                             [('8485-1901', {'u': 18.69765903,
+                                             'g': 17.45450578,
+                                             'r': 16.80842176,
+                                             'i': 16.43652498,
+                                             'z': 16.20534984}),
+                              ('7443-12701', {'u': 17.07501837,
+                                              'g': 15.57770095,
+                                              'r': 14.95969099,
+                                              'i': 14.63861064,
+                                              'z': 14.44369601})])
+    def test_elpetro_mag(self, nsa_target, plateifu, expected):
+        nsa_target, galaxy_plateifu = nsa_target
 
-    def setUp(self):
-        self.set_sasurl('local')
-        self.session = marvin.marvindb.session
-        self.sampledb = marvin.marvindb.sampledb
+        if galaxy_plateifu != plateifu:
+            pytest.skip('Skip non-matching plateifus.')
 
-    def tearDown(self):
-        pass
+        for band, value in expected.items():
+            assert getattr(nsa_target, 'elpetro_mag_{0}'.format(band)) == pytest.approx(value)
 
-    def test_elpetro_mag(self):
+    @pytest.mark.parametrize('plateifu, expected',
+                             [('8485-1901', {('u', 'g'): 1.24315324,
+                                             ('g', 'r'): 0.64608403,
+                                             ('r', 'i'): 0.37189678,
+                                             ('i', 'z'): 0.23117514}),
+                              ('7443-12701', {('u', 'g'): 1.49731742,
+                                              ('g', 'r'): 0.61800996,
+                                              ('r', 'i'): 0.32108036,
+                                              ('i', 'z'): 0.19491463})])
+    def test_elpetro_colour(self, nsa_target, plateifu, expected):
+        nsa_target, galaxy_plateifu = nsa_target
 
-        expected = [18.69765903, 17.45450578, 16.80842176, 16.43652498, 16.20534984]
+        if galaxy_plateifu != plateifu:
+            pytest.skip('Skip non-matching plateifus.')
 
-        nsa_target = self.session.query(
-            self.sampledb.NSA).join(self.sampledb.MangaTargetToNSA,
-                                    self.sampledb.MangaTarget).filter(
-                self.sampledb.MangaTarget.mangaid == '1-209232').one()
-
-        for ii, band in enumerate(['u', 'g', 'r', 'i', 'z']):
-            self.assertAlmostEqual(
-                getattr(nsa_target, 'elpetro_mag_{0}'.format(band)), expected[ii])
-
-    def test_elpetro_colour(self):
-
-        expected = [1.24315324, 0.64608403, 0.37189678, 0.23117514]
-        colours = [('u', 'g'), ('g', 'r'), ('r', 'i'), ('i', 'z')]
-
-        nsa_target = self.session.query(
-            self.sampledb.NSA).join(self.sampledb.MangaTargetToNSA,
-                                    self.sampledb.MangaTarget).filter(
-                self.sampledb.MangaTarget.mangaid == '1-209232').one()
-
-        for ii, bands in enumerate(colours):
+        for bands, value in expected.items():
             bandA, bandB = bands
-            self.assertAlmostEqual(nsa_target.elpetro_colour(bandA, bandB), expected[ii])
-            self.assertAlmostEqual(getattr(nsa_target,
-                                           'elpetro_mag_{0}_{1}'.format(bandA, bandB)),
-                                   expected[ii])
 
-    def test_query_elpetro_mag(self):
+            assert nsa_target.elpetro_colour(bandA, bandB) == pytest.approx(value)
 
-        elpetro_mag_g = self.session.query(self.sampledb.NSA.elpetro_mag_g).join(
-            self.sampledb.MangaTargetToNSA, self.sampledb.MangaTarget).filter(
-                self.sampledb.MangaTarget.mangaid == '1-209232').first()
+            elpetro_mag_colour = getattr(nsa_target, 'elpetro_mag_{0}_{1}'.format(bandA, bandB))
+            assert elpetro_mag_colour == pytest.approx(value)
 
-        self.assertAlmostEqual(elpetro_mag_g[0], 17.454505782813705)
+    @pytest.mark.parametrize('plateifu, expected',
+                             [('8485-1901', {('u', 'g'): 1.1655902862549006,
+                                             ('g', 'r'): 0.5961246490479013,
+                                             ('r', 'i'): 0.3375816345214986,
+                                             ('i', 'z'): 0.20068740844720168}),
+                              ('7443-12701', {('u', 'g'): 1.3728961944580007,
+                                              ('g', 'r'): 0.5836753845213991,
+                                              ('r', 'i'): 0.27035522460939987,
+                                              ('i', 'z'): 0.1656112670899006})])
+    def test_elpetro_absmag_colour(self, nsa_target, plateifu, expected):
+        nsa_target, galaxy_plateifu = nsa_target
+
+        if galaxy_plateifu != plateifu:
+            pytest.skip('Skip non-matching plateifus.')
+
+        for bands, value in expected.items():
+            bandA, bandB = bands
+
+            assert nsa_target.elpetro_absmag_colour(bandA, bandB) == pytest.approx(value)
+
+            colour = 'elpetro_absmag_{0}_{1}'.format(bandA, bandB)
+            elpetro_absmag_colour = getattr(nsa_target, colour)
+            assert elpetro_absmag_colour == pytest.approx(value)

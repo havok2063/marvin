@@ -14,8 +14,10 @@ from marvin.core.core import MarvinToolsClass
 from marvin.core.exceptions import MarvinError
 from marvin.tools.cube import Cube
 from marvin import config, marvindb
+from marvin.utils.general.structs import FuzzyList
 from astropy.io import fits
 from brain.utils.general import checkPath
+import inspect
 
 try:
     from sdss_access.path import Path
@@ -23,7 +25,7 @@ except ImportError:
     Path = None
 
 
-class Plate(MarvinToolsClass, list):
+class Plate(MarvinToolsClass, FuzzyList):
     '''A class to interface with MaNGA Plate.
 
     This class represents a Plate, initialised either
@@ -36,8 +38,8 @@ class Plate(MarvinToolsClass, list):
     associated with this plate.
 
     Parameters:
-        plateid (str):
-            The plateid of the Plate to load.
+        plate (str):
+            The plate id of the Plate to load.
         plateifu (str):
             The plate-ifu of the Plate to load
         filename (str):
@@ -49,6 +51,27 @@ class Plate(MarvinToolsClass, list):
             The MPL/DR version of the data to use.
         nocubes (bool):
             Set this to turn off the Cube loading
+
+    Attributes:
+        cubeXXXX (object):
+            The Marvin Cube object for the given ifu, e.g. cube1901 refers to the Cube for plateifu 8485-1901
+        plate/plateid (int):
+            The plate id for this plate
+        cartid (str):
+            The cart id for this plate
+        designid (int):
+            The design id for this plate
+        ra (float):
+            The RA of the plate center
+        dec (float):
+            The declination of the plate center
+        dateobs (str):
+            The date of observation for this plate
+        surveymode (str):
+            The survey mode for this plate
+        isbright (bool):
+            True if this is a bright time plate
+
     Return:
         plate:
             An object representing the Plate entity. The object is a list of
@@ -56,42 +79,46 @@ class Plate(MarvinToolsClass, list):
 
     Example:
         >>> from marvin.tools.plate import Plate
-        >>> plate = Plate(plateid=8485)
+        >>> plate = Plate(plate=8485)
         >>> print(plate)
-        >>> <Marvin Plate (plateid=8485, mode='local', data_origin='db')>
+        >>> <Marvin Plate (plate=8485, n_cubes=17, mode='local', data_origin='db')>
         >>>
         >>> print('Cubes found in this plate: {0}'.format(len(plate)))
         >>> Cubes found in this plate: 4
         >>>
         >>> # access the plate via index to access the individual cubes
-        >>> print(plate[0])
+        >>> plate[0]
         >>> <Marvin Cube (plateifu='8485-12701', mode='local', data_origin='db')>
         >>>
-        >>> print(plate[1])
+        >>> # or by name
+        >>> plate['12702']
         >>> <Marvin Cube (plateifu='8485-12702', mode='local', data_origin='db')>
         >>>
     '''
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, input=None, filename=None, mangaid=None, plateifu=None,
+                 mode=None, data=None, release=None, plate=None,
+                 download=None, nocubes=None):
 
-        self.plateid = kwargs.get('plateid', None)
         self._cubes = None
         self._plate = None
         self._pdict = None
         self.platedir = None
-        self.nocubes = kwargs.get('nocubes', None)
+        self.nocubes = nocubes
 
         # If plateid specified, force a temp plateifu
-        if self.plateid:
-            self.plateifu = '{0}-XXXX'.format(self.plateid)
-            kwargs['plateifu'] = self.plateifu
+        if plate:
+            self.plateid = plate
+            plateifu = '{0}-XXXX'.format(self.plateid)
 
-        self.plateifu = kwargs.get('plateifu', None)
+        self.plateifu = plateifu
 
-        args = [self.plateid, self.plateifu]
-        assert any(args), 'Enter plateid or plateifu!'
+        args = [plate, plateifu]
+        assert any(args), 'Enter plate or plateifu!'
 
-        MarvinToolsClass.__init__(self, *args, **kwargs)
+        MarvinToolsClass.__init__(self, input=input, filename=filename, mangaid=mangaid,
+                                  plateifu=plateifu, mode=mode, data=data, release=release,
+                                  download=download)
 
         # sort out any plateid, plate-ifu, mangaid name snafus
         self._sortOutNames()
@@ -112,8 +139,29 @@ class Plate(MarvinToolsClass, list):
     def __repr__(self):
         '''Representation for Plate.'''
 
-        return ('<Marvin Plate (plateid={self.plateid!r}, mode={self.mode!r}, '
-                'data_origin={self.data_origin!r})>'.format(self=self))
+        return ('<Marvin Plate (plate={self.plateid!r}, n_cubes={0}, mode={self.mode!r}, '
+                'data_origin={self.data_origin!r})>'.format(len(self), self=self))
+
+    def __dir__(self):
+        ''' Overriding dir for Plate '''
+
+        # get the attributes from the class itself
+        class_members = list(list(zip(*inspect.getmembers(self.__class__)))[0])
+        instance_attr = list(self.__dict__.keys())
+        # get the dir from FuzzyList
+        listattr = ['cube{0}'.format(i.plateifu.split('-')[1]) for i in self]
+        listattr.sort()
+
+        return listattr + sorted(class_members + instance_attr)
+
+    def __getattr__(self, value):
+
+        if 'cube' in value:
+            ifu = value.split('cube')[-1]
+            plateifu = '{0}-{1}'.format(self.plate, ifu)
+            return self[plateifu]
+
+        return super(Plate, self).__getattribute__(value)
 
     def _getFullPath(self, **kwargs):
         """Returns the full path of the file in the tree."""
@@ -195,7 +243,6 @@ class Plate(MarvinToolsClass, list):
         self.data_origin = 'api'
         self._makePdict()
 
-    @checkPath
     def _initCubes(self):
         ''' Initialize a list of Marvin Cube objects '''
 
@@ -208,10 +255,10 @@ class Plate(MarvinToolsClass, list):
             else:
                 cubes = sdss_path.expand('mangamastar', drpver=self._drpver,
                                          plate=self.plateid, ifu='*')
-            _cubes = [Cube(filename=cube) for cube in cubes]
+            _cubes = [Cube(filename=cube, mode=self.mode, release=self.release) for cube in cubes]
 
         elif self.data_origin == 'db':
-            _cubes = [Cube(plateifu=cube.plateifu)
+            _cubes = [Cube(plateifu=cube.plateifu, mode=self.mode, release=self.release)
                       for cube in self._plate.cubes]
 
         elif self.data_origin == 'api':
@@ -222,9 +269,10 @@ class Plate(MarvinToolsClass, list):
             response = self._toolInteraction(url)
             data = response.getData()
             plateifus = data['plateifus']
-            _cubes = [Cube(plateifu=pifu, mode='remote') for pifu in plateifus]
+            _cubes = [Cube(plateifu=pifu, mode=self.mode, release=self.release) for pifu in plateifus]
 
-        list.__init__(self, _cubes)
+        FuzzyList.__init__(self, _cubes)
+        self.mapper = (lambda e: e.plateifu)
 
     def _setParams(self):
         ''' Set the plate parameters '''
@@ -263,13 +311,17 @@ class Plate(MarvinToolsClass, list):
             plate, ifu = self.plateifu.split('-')
             self.plateid = int(plate)
 
-    @checkPath
     def _checkFilename(self):
         ''' Checks the filename for a proper FITS file '''
 
         # if filename is not FITS, then try to load one
         if 'fits' not in self.filename.lower():
-            sdss_path = Path()
+
+            if not Path:
+                raise MarvinError('sdss_access is not installed')
+            else:
+                sdss_path = Path()
+
             # try a cube
             full = sdss_path.full('mangacube', drpver=self._drpver, plate=self.plateid, ifu='*')
             cubeexists = sdss_path.any('', full=full)

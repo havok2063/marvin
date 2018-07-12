@@ -17,13 +17,14 @@ Revision history:
 from __future__ import division
 from __future__ import print_function
 
-from flask import jsonify
-from flask_classy import route
+from flask import jsonify, Response
+from flask_classful import route
 
 from brain.api.general import BrainGeneralRequestsView
 from marvin.utils.general import mangaid2plateifu as mangaid2plateifu
 from marvin.utils.general import get_nsa_data
 from marvin.api.base import arg_validate as av
+import json
 
 
 class GeneralRequestsView(BrainGeneralRequestsView):
@@ -139,7 +140,8 @@ class GeneralRequestsView(BrainGeneralRequestsView):
             self.results['status'] = -1
             self.results['error'] = 'get_nsa_data failed with error: {0}'.format(str(ee))
 
-        return jsonify(self.results)
+        # these should be jsonify but switching back to json.dumps until fucking Utah gets with the fucking picture
+        return Response(json.dumps(self.results), mimetype='application/json')
 
     @route('/nsa/drpall/<mangaid>/', endpoint='nsa_drpall', methods=['GET', 'POST'])
     @av.check_args()
@@ -200,4 +202,4 @@ class GeneralRequestsView(BrainGeneralRequestsView):
             self.results['status'] = -1
             self.results['error'] = 'get_nsa_data failed with error: {0}'.format(str(ee))
 
-        return jsonify(self.results)
+        return Response(json.dumps(self.results), mimetype='application/json')
