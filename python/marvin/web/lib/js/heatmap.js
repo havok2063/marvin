@@ -373,6 +373,7 @@ var HeatMap = function () {
                             d: 'M 0 0 L 3 3 M 0 3 L 3 0',
                             stroke: 'white', // '#A8A8A8',
                             strokeWidth: 0.3
+                            // fill: 'rgba(255, 255, 255, 1)'  // 'rgba(168, 168, 168, 0.3)'
                         }
                     }]
                 },

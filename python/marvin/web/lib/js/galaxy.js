@@ -2,7 +2,7 @@
 * @Author: Brian Cherinka
 * @Date:   2016-04-13 16:49:00
 * @Last Modified by:   Brian Cherinka
-* @Last Modified time: 2018-03-02 17:22:31
+* @Last Modified time: 2018-11-17 14:36:53
 */
 
 //
@@ -532,26 +532,25 @@ var Galaxy = function () {
             if (type === 'galaxy') {
                 var x = this.mygalaxy[this.nsachoices[index].x];
                 var y = this.mygalaxy[this.nsachoices[index].y];
-                var xrev = this.nsachoices[index].x.search('absmag') > -1 ? true : false;
-                var yrev = this.nsachoices[index].y.search('absmag') > -1 ? true : false;
+                var pattern = 'absmag_[a-z]$';
+                var xrev = this.nsachoices[index].x.search(pattern) > -1 ? true : false;
+                var yrev = this.nsachoices[index].y.search(pattern) > -1 ? true : false;
                 data = [{ 'name': this.plateifu, 'x': x, 'y': y }];
                 options = { xtitle: this.nsachoices[index].xtitle, ytitle: this.nsachoices[index].ytitle,
                     title: this.nsachoices[index].title, galaxy: { name: this.plateifu }, xrev: xrev,
                     yrev: yrev };
             } else if (type === 'sample') {
-                (function () {
-                    var x = _this6.nsasample[_this6.nsachoices[index].x];
-                    var y = _this6.nsasample[_this6.nsachoices[index].y];
-                    data = [];
-                    $.each(x, function (index, value) {
-                        if (value > -9999 && y[index] > -9999) {
-                            var tmp = { 'name': _this6.nsasample.plateifu[index], 'x': value, 'y': y[index] };
-                            data.push(tmp);
-                        }
-                    });
-                    options = { xtitle: _this6.nsachoices[index].xtitle, ytitle: _this6.nsachoices[index].ytitle,
-                        title: _this6.nsachoices[index].title, altseries: { name: 'Sample' } };
-                })();
+                var _x = this.nsasample[this.nsachoices[index].x];
+                var _y = this.nsasample[this.nsachoices[index].y];
+                data = [];
+                $.each(_x, function (index, value) {
+                    if (value > -9999 && _y[index] > -9999) {
+                        var tmp = { 'name': _this6.nsasample.plateifu[index], 'x': value, 'y': _y[index] };
+                        data.push(tmp);
+                    }
+                });
+                options = { xtitle: this.nsachoices[index].xtitle, ytitle: this.nsachoices[index].ytitle,
+                    title: this.nsachoices[index].title, altseries: { name: 'Sample' } };
             }
             return [data, options];
         }

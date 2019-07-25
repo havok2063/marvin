@@ -4,6 +4,7 @@ bin/__pycache__
 .pytest_cache
 flask_profiler.sql
 bin/flask_profiler.sql
+build
 docs/sphinx/_build
 docs/sphinx/flask_profiler.sql
 etc/node_modules
@@ -86,3 +87,6 @@ python/marvin/web/static/images/logs
 python/marvin/web/static/logs
 python/marvin/web/templates/logs
 python/marvin/web/uwsgi_conf_files/logs
+.ropeproject
+
+**/htmlcov

@@ -1,22 +1,23 @@
 
 .. _marvin-web:
 
-Web (marvin.web)
-================
+Web
+===
 
 Here we describe the general content and functionality of all pages in
-Marvin-Web.  Most of the functionality that you will find on the Web exists in
-Marvin Tools. Indeed, a lot of the functionality simply uses existing Marvin
-tools.
+`Marvin-Web <https://dr15.sdss.org/marvin>`_.  Most of the functionality
+that you will find on the Web exists in Marvin Tools. Indeed, a lot of the
+functionality simply uses existing Marvin tools.
 
 .. _web-main:
 
-Main
-----
+Main Page
+---------
 
-The main Marvin splash page for the MaNGA survey contains a navgiation bar with links
-to other Marvin pages, a Log-In window, general information about Marvin
-and the development team, as well as quick contact information at the bottom.
+The main `Marvin splash page <https://dr15.sdss.org/marvin>`_ for the MaNGA
+survey contains a navigation bar with links to other Marvin pages, a Log-In
+window, general information about Marvin and the development team, as well as
+quick contact information at the bottom.
 
 **ID Search Box**:
 
@@ -30,36 +31,36 @@ designations given the typed entry.
 **Version Dropdown Select**:
 
 A dropdown select button indicating what version of MaNGA data you are
-currently working with.
+currently working with.  The default available releases are public data releases.
 
-.. _web-help:
+**Login**:
 
-Help
-----
-A link to the Marvin Documentation page.
+The Marvin login box.  Log in using your personal SDSS credentials or the general SDSS username and password to
+access collaboration data.
+
 
 .. _web-random:
 
-Image Roulette
---------------
+Image Roulette Page
+-------------------
 
-Displays a random set of 16 images of galaxies from the MaNGA survey.  Each
+The `Image Roulette page <https://dr15.sdss.org/marvin/random>`_ displays a
+random set of 16 images of galaxies from the MaNGA survey.  Each
 thumbnail on the left is displayed in larger form on the right.  Click the giant
 image to go the individual Galaxy Page.
 
 .. _web-search:
 
-Search
-------
+Search Page
+-----------
 
-Search the MaNGA dataset using a simplified interface with pseudo-natural
+The `Search page <https://dr15.sdss.org/marvin/search>`_ enables querying the MaNGA dataset using a simplified interface with pseudo-natural
 language syntax.
 
 **Return Parameters**:
 
 A dropdown multiple select box indicating which parameters are available to query
 on and/or return.  You may select multiple parameters (up to 5). See :ref:`marvin-query-parameters`.
-
 
 **Search Filter**:
 
@@ -75,15 +76,19 @@ The search filter accepts boolean search strings that are parsed with a
 
 If you need help building a query, you can use this to help design your SQL filter.  This feature uses the `Jquery Query Builder <http://querybuilder.js.org/>`_.
 
-After a query is run a table of results is generated to navigate around.  A **View Galaxies** button will display the postage stamp images of all the galaxies in the results.  This page displays up to 16 galaxies at a time, with the big carousel image linking to the individual galaxy page.  There are pagination buttons to help you cycle through your pages.
+After a query is run a table of results is generated to navigate around.  Returned columns include some default target identification parameters, plus any parameters used in your search filter, or additional returned parameters.  Large result sets are paginated.  You can also sort on individual columns by clicking the column header.
+
+**View Galaxies**:
+
+After a search, the **View Galaxies** button will display the postage stamp images of all the galaxies in the results.  This page displays up to 16 galaxies at a time, with the big carousel image linking to the individual galaxy page.  There are pagination buttons to help you cycle through your pages.
 
 
 .. _web-plate:
 
-Plate
------
+Plate Pages
+-----------
 
-The Plate page includes:
+A `Plate page <https://dr15.sdss.org/marvin/plate/8485/>`_ includes:
 
 * **meta-data**: some basic information about the Plate
 
@@ -94,10 +99,10 @@ The Plate page includes:
 
 .. _web-galaxy:
 
-Galaxy
-------
+Galaxy Pages
+------------
 
-The Galaxy page includes:
+A `Galaxy page <https://dr15.sdss.org/marvin/galaxy/7977-12705/>`_ includes:
 
 * **meta-data**: basic observation details (such as coordinates and
   signal-to-noise\ :sup:`2`), quality flags, and targeting information,
@@ -116,34 +121,34 @@ The Galaxy page includes:
   a Galaxy, Stellar, or Ancillary bit.  Hover over the flags button to see a pop up
   of the flags contained in the given bitmask.
 
-* **download link**: links to download the cube, RSS, or the default DAP MAPS
-  FITS files and to view the galaxy in the `SDSS Skyserver
+* **download link**: links to download the cube, RSS, or the default DAP maps
+  FITS files
+
+* **SDSS Skyserver link**: view the galaxy in the `SDSS Skyserver
   <http://skyserver.sdss.org/dr12/en/home.aspx>`_,
 
-* **Map/Specview toggle button**: Click this toggle button to activate the interactive spectrum and map displays described below.
+* **Map/Specview toggle button**: Click this toggle button to activate:
 
-* **galaxy image** that can be clicked on to show the nearest spectrum, and
+    * a **galaxy image** that can be clicked on to show the nearest spectrum,
 
-* **interactive spectrum display**.
+    * an :ref:`interactive spectrum display <web-spectrum>`,
 
-* **interactive map display**.
+    * an :ref:`interactive map display <web-maps>`, and
 
-* **interactive nsa display**.
+    * an :ref:`interactive galaxy properties display <galaxy_properties>`.
+
 
 .. _web-spectrum:
 
 Spectrum Display
 ^^^^^^^^^^^^^^^^
 
-Enable the spectrum display by toggling on the Map/Spec View box.  The spectrum display uses the
-`DyGraphs <http://dygraphs.com/>`_ javascript library.
+Enable the spectrum display by toggling on the Map/SpecView box.  The spectrum display uses the `DyGraphs <http://dygraphs.com/>`_ javascript library.
 
-* **Select Spectrum**: Click on the image to show the spectrum of the spaxel at
-  a particular location (default is central spaxel), which is indicated by the
-  red dot and whose coordinates are listed above the spectrum.
+* **Select Spectrum**: Click on the image or a :ref:`map <web-maps>` to show the spectrum of the spaxel at a particular location (default is central spaxel) whose coordinates are listed above the spectrum. The most recently selected location in the image is indicated by the red dot.
 
 * **Zooming**: Zoom in by clicking and dragging either horizontally or
-  vertically. Double click to unzoom.  The zoomed region will remain as you
+  vertically.  Double click to unzoom.  The zoomed region will remain as you
   click on different locations of the galaxy image.
 
 * **Panning**: When zoomed in, hold shift and click and drag with the mouse to
@@ -151,44 +156,46 @@ Enable the spectrum display by toggling on the Map/Spec View box.  The spectrum 
 
 * **Spectrum features**:
 
-  * green solid line: spectrum
-  * blue solid line: model fits (unbinned: SPX-MILESHC) (for MPLs >= 5)
-  * shaded region: 1-sigma error range
-  * cursor coordinates: wavelength, flux, and modelfit value
+  * green solid line: spectrum (in observed frame)
+  * green shaded region: 1-sigma error range
+  * blue solid line: full model fit (HYB10-MILESHC for Data Release >= 15 and MPLs >= 7)
+  * cursor coordinates: wavelength, flux, and model fit values
+
 
 .. _web-maps:
 
 Map Display
 ^^^^^^^^^^^
 
-Enable the map display by toggling the red Map/Spec View box.  This displays a series of three maps by default,
-with the ability to select up to six maps.  The default maps loaded are the stellar velocity map, the Ha emission line
-flux map, and the d4000 spectral index map.  All maps are generated using the
-`HighCharts <http://www.highcharts.com/>`_ javascript library.
+Enable the map display by toggling the red Map/SpecView box.  This displays a series of three maps by default, with the ability to select up to six maps.  The default maps loaded are the stellar velocity map, the Halpha emission line flux map, and the d4000 spectral index map.  All maps are generated using the `HighCharts <http://www.highcharts.com/>`_ javascript library.
 
 * **Selecting Maps**: Choose Analysis Properties and Binning-Stellar Template combinations to show.
 
-  * **Analysis Property Dropdown**: Choose up to 6 properties. *Default properties are the Halpha emission line flux (Gaussian fit), the stellar velocity, and the d4000 spectral index maps*
-  * **Binning Scheme--Stellar Template Dropdown**: Choose a binning and stellar template set combination. *Default is SPX-GAU-MILESHC (i.e., spaxel binning (i.e., no binning) with the MILESHC stellar template set).*
+  * **Analysis Property Dropdown**: Choose up to 6 properties. *Default properties are the Halpha emission line flux (Gaussian fit), the stellar velocity, and the d4000 spectral index maps.*
+  * **Binning Scheme--Stellar Template Dropdown**: Choose a binning and stellar template set combination. *Default is HYB10-GAU-MILESHC* (i.e., hybrid binning scheme with stellar continuum fit in Voronoi bins with signal-to-noise ratio >= 10 and emission lines fit in each spaxel with the MILESHC stellar template set).
   * **Get Maps**: Click to display maps.
   * **Reset Selection**: Clear your selected Analysis Properties (Binning Scheme and Stellar Template combination will remain the same.).
+
+* **Sigma Corrections**:
+  When selecting the ``stellar_sigma`` or ``emline_sigma`` maps, we automatically apply the relevant sigma correction.  A corrected map is indicated via the **Corrected: [name]** map title.  Uncorrected maps, for example, in MPL-6, retain the original title name.
 
 * **Map Color Schemes**:
 
   * **No Data and Bad Data**
 
     * Grey = Values with the "NoCoverage" maskbit set, or for MPL-4, a mask value of 1.
-    * Hatched area = Values with mask bits (5,6,7,or 30) set or low S/N (S/N ratio < 1).
+    * Hatched area = Values with mask bits (5, 6, 7, or 30) set or low S/N (S/N ratio < 1; not used for velocity maps).
 
   * **Color Maps**
 
-    * CIE Lab Linear L* (Black-Green-White) = Default color map for sequential values (e.g., emission line fluxes).
-    * Inferno (Indigo-Red-White) = Alternative color map for sequential values.
-    * Blue-White-Red = Diverging color map with Blue and Red symmetrically diverging from the midpoint color White.
+    * CIE Lab Linear L* (Black-Green-White): default color map for sequential values (e.g., emission line fluxes).
+    * Inferno (Indigo-Red-White): alternative color map for sequential values used for velocity dispersion maps.
+    * Blue-White-Red: diverging color map with Blue and Red symmetrically diverging from the midpoint color White used for velocity maps.
 
   * **Color Axis**
 
     * The color axes are restricted to the following percentile ranges of the unmasked data to best display the relative patterns within each map without being skewed by outliers.
+
       * Velocity: 10-90th percentiles
       * Velocity dispersion: 10-90th percentiles
       * Emission line flux: 5-95th percentiles
@@ -200,26 +207,25 @@ flux map, and the d4000 spectral index map.  All maps are generated using the
 
 * **Saving a Map**: Click on the menu dropdown (three horizontal lines) just to the upper right of each map and select file format (PNG, JPG, PDF, SVG).
 
-.. _nsa_display:
 
-NSA Display
-^^^^^^^^^^^
+.. _galaxy_properties:
 
-Clicking the NSA Display Tab will show you the NSA catalog information for this galaxy in a table format.  In addition, there are two tabs for interactive display.
+Galaxy Properties Display
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **NSA table**: Most of the NSA galaxy properties are displayed in this table, in paginated form by default.  Click the arrow in the upper right corner to toggle the pagination and view all parameters at once.
+Clicking the Galaxy Properties tab will show you the `NASA-Sloan Atlas (NSA) catalog <https://www.sdss.org/dr13/manga/manga-target-selection/nsa/>`_ information for this galaxy in a table format.  In addition, there are two tabs for interactive display.
 
-* **Scatter Plot**: This tab provides two convenient scatter plots highlighting the relative location of the specific galaxy amongst the NSA sample of MaNGA galaxies. The plots are interactive.  Drag a box inside to zoom in.  Hover over points to see pop up info. You can change the plotted parameters by dragging and dropping one of the twelve **bold** parameters displayed in the NSA table on the left.  As you drag, the drop location will be highlighted in red.
+* **NSA table**: Most of the NSA galaxy properties are displayed in this table (paginated by default).  Click the arrow in the upper right corner to toggle the pagination and view all parameters at once.
 
-* **Box and Whisker**: This tab provides a simplified interface to the Scatter Plot tab.  It displays the galaxy NSA parameter relative the entire sample in a series of box-and-whisker plots.  By default, the twelve **bold** parameters in the NSA table are displayed here. Hover over the red dot or the outliers to see their values.
+* **Scatter Plot**: This tab provides two convenient scatter plots highlighting the relative location of the specific galaxy amongst the NSA sample of MaNGA galaxies. The plots are interactive.  Click and drag to zoom in.  Hover over points to see pop up info. You can change the plotted parameters by dragging and dropping one of the twelve **bold** parameters displayed in the NSA table on the left.  As you drag, the drop location will be highlighted in red.
 
-In each box-and-whisker plot:
- * The red dot is the galaxy parameter value
- * The horizontal line is the median value of the NSA sample
- * The lower and upper bounds of the box are the 25th and 75th percentiles
- * The whiskers of the box are 1.5*IQR (Interquartile Range)
- * Outlier points are indicated as light grey open circles
+* **Box and Whisker**: This tab provides a simplified interface to the Scatter Plot tab.  It displays the galaxy NSA parameter relative the entire sample in a series of box-and-whisker plots.  By default, the twelve **bold** parameters in the NSA table are displayed here. Hover over the red dot or the outliers to see their values. Scroll horizontally to see more parameters.
 
-Find out more about box-and-whisker plots `here <https://en.wikipedia.org/wiki/Box_plot>`_.
+In each `box-and-whisker <https://en.wikipedia.org/wiki/Box_plot>`_ plot:
+ * The red dot is the galaxy parameter value.
+ * The horizontal line is the median value of the NSA sample.
+ * The lower and upper bounds of the box are the 25th and 75th percentiles.
+ * The whiskers of the box are 1.5 \* interquartile range.
+ * Outlier points are indicated as light grey open circles.
 
-
+|

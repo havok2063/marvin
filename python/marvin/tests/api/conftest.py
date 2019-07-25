@@ -6,51 +6,18 @@
 # @Author: Brian Cherinka
 # @Date:   2017-05-07 13:48:11
 # @Last modified by:   Brian Cherinka
-# @Last Modified time: 2017-11-08 13:41:35
+# @Last Modified time: 2018-07-13 18:24:09
 
 from __future__ import print_function, division, absolute_import
 from marvin.tests.web.conftest import Page
 from marvin import config
 from marvin.web import create_app
-from marvin.api.base import arg_validate as av
 from marvin.web.settings import TestConfig, CustomConfig
 from marvin.web.extensions import limiter
+from brain.utils.general import build_routemap
 import pytest
-import os
 import six
 
-# releases = ['MPL-5']
-
-
-# @pytest.fixture(scope='session', params=releases)
-# def release(request):
-#     return request.param
-
-
-# @pytest.fixture(scope='session')
-# def drpver(release):
-#     drpver, dapver = config.lookUpVersions(release)
-#     return drpver
-
-
-# @pytest.fixture(scope='session')
-# def dapver(release):
-#     drpver, dapver = config.lookUpVersions(release)
-#     return dapver
-
-
-# @pytest.fixture(scope='session')
-# def mode():
-#     return config.mode
-
-
-# @pytest.fixture(scope='session')
-# def app():
-#     app = create_app(debug=True, local=True, use_profiler=False)
-#     app.config['TESTING'] = True
-#     app.config['WTF_CSRF_ENABLED'] = False
-#     app.config['PRESERVE_CONTEXT_ON_EXCEPTION'] = False
-#     return app
 
 @pytest.fixture(scope='session')
 def app():
@@ -60,16 +27,23 @@ def app():
     return app
 
 
-@pytest.fixture(scope='session')
-def init_api(urlmap):
+@pytest.fixture()
+def urlmap(app):
+    ''' fixture for building a new urlmap without nonsense '''
+    urlmap = build_routemap(app)
     config.urlmap = urlmap
+
+
+@pytest.fixture(scope='function')
+def init_api(monkeyauth, set_config, urlmap):
     config.forceDbOn()
+    config.login()
 
 
 class ApiPage(Page):
 
-    def __init__(self, client, blue, endpoint):
-        super(ApiPage, self).__init__(client, blue, endpoint)
+    def __init__(self, app, client, blue, endpoint):
+        super(ApiPage, self).__init__(app, client, blue, endpoint)
         self.api_base_success = dict(status=1, error=None, traceback=None)
 
     def assert_success(self, expdata=None, keys=None, issubset=None):
@@ -105,10 +79,12 @@ class ApiPage(Page):
 
 
 @pytest.fixture()
-def page(client, request, init_api):
+def page(app, client, request, init_api):
     blue, endpoint = request.param
-    page = ApiPage(client, 'api', endpoint)
+    page = ApiPage(app, client, 'api', endpoint)
     yield page
+    url = page.get_url('index_page', 'Marvin:clear_session')
+    page.load_page('get', url)
 
 
 @pytest.fixture()

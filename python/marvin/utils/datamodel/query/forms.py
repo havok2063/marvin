@@ -10,22 +10,21 @@ Revision History:
     2016-03-02 - generalized the form to build all forms - B. Cherinka
 '''
 
-from __future__ import print_function
-from __future__ import division
+from __future__ import division, print_function
+
+import re
 import sys
-from collections import OrderedDict
-from marvin import marvindb, config
-from marvin.core.exceptions import MarvinError, MarvinUserWarning
-from collections import defaultdict
-from wtforms import StringField, Field, FieldList, validators
-from wtforms import SelectMultipleField, ValidationError, SubmitField
+import warnings
+from collections import OrderedDict, defaultdict
+from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
+from sqlalchemy.inspection import inspect as sa_inspect
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+from wtforms import Field, SelectMultipleField, StringField, SubmitField, ValidationError, validators
 from wtforms.widgets import TextInput
 from wtforms_alchemy import model_form_factory
-from sqlalchemy.inspection import inspect as sa_inspect
-from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
-from sqlalchemy.orm.attributes import InstrumentedAttribute
-import re
-import warnings
+from marvin import config, marvindb
+from marvin.core.exceptions import MarvinUserWarning
+from marvin.utils.general.structs import FuzzyDict
 
 # flask_wtf does not work locally - OUTSIDE APPLICATON CONTEXT;
 # need some kind of toggle for web version and not???
@@ -54,7 +53,7 @@ class ModelForm(BaseModelForm):
         return marvindb.session
 
 # Builds a dictionary for modelclasses with key ClassName and value SQLalchemy model class
-modelclasses = marvindb.buildUberClassDict()
+# modelclasses = marvindb.buildUberClassDict()
 
 
 # Class factory
@@ -124,8 +123,7 @@ class ParamFormLookupDict(dict):
     def __init__(self, **kwargs):
         self.allspaxels = kwargs.get('allspaxels', None)
         self._release = kwargs.get('release', config.release)
-        self._init_table_shortcuts()
-        self._init_name_shortcuts()
+        self._init_shortcuts()
 
     def __contains__(self, value):
         ''' Override the contains '''
@@ -141,8 +139,7 @@ class ParamFormLookupDict(dict):
         """Checks if `key` is a unique column name and return the value."""
 
         # Init the shortcuts
-        self._init_table_shortcuts()
-        self._init_name_shortcuts()
+        self._init_shortcuts()
 
         # Applies shortcuts
         keySplits = self._apply_shortcuts(key)
@@ -154,17 +151,7 @@ class ParamFormLookupDict(dict):
         matches = self._check_for_junk(matches)
 
         # Return matched key
-        if len(matches) == 0:
-            # No matches. This returns the standards KeyError from dict
-            raise KeyError('{0} does not match any column.'.format(key))
-        elif len(matches) == 1:
-            # One match: returns the form.
-            return dict.__getitem__(self, matches[0])
-        else:
-            # Multiple results. Raises a custom error.
-            raise KeyError(
-                '{0} matches multiple parameters in the lookup table: {1}'
-                .format(key, ', '.join(matches)))
+        return dict.__getitem__(self, self._get_good_match(key, matches))
 
     def _check_for_junk(self, matches):
         ''' check for Junk matches and return the correct key '''
@@ -175,6 +162,20 @@ class ParamFormLookupDict(dict):
             keySplits = self._apply_shortcuts(junkmatches[0])
             matches = self._get_matches(keySplits)
         return matches
+
+    def _get_good_match(self, key, matches):
+        ''' Check if the key match is good '''
+        if len(matches) == 0:
+            # No matches. This returns the standards KeyError from dict
+            raise KeyError('{0} does not match any column.'.format(key))
+        elif len(matches) == 1:
+            # One match: returns True
+            return matches[0]
+        else:
+            # Multiple results. Raises a custom error.
+            raise KeyError(
+                '{0} matches multiple parameters in the lookup table. Try one of: {1}'
+                .format(key, ', '.join(matches)))
 
     def mapToColumn(self, keys):
         """Returns the model class column in the WFTForm."""
@@ -193,13 +194,7 @@ class ParamFormLookupDict(dict):
             keySplits = self._apply_shortcuts(key)
             matches = self._get_matches(keySplits)
             matches = self._check_for_junk(matches)
-            if len(matches) == 0:
-                raise KeyError('{0} does not match any column.'.format(key))
-            elif len(matches) == 1:
-                key = matches[0]
-            else:
-                raise KeyError('{0} matches multiple parameters '
-                               'in the lookup table: {1}'.format(key, ', '.join(matches)))
+            key = self._get_good_match(key, matches)
             wtfForm = self[key]
             column = key.split('.')[-1]
             columns.append(getattr(wtfForm.Meta.model, column))
@@ -212,59 +207,104 @@ class ParamFormLookupDict(dict):
     def _init_table_shortcuts(self):
         ''' initialize the table shortcuts '''
 
+        self._schemaShortcuts = {'datadb': 'mangadatadb', 'dapdb': 'mangadapdb', 'sampledb': 'mangasampledb',
+                                 'auxdb': 'mangaauxdb'}
+
         self._tableShortcuts = {'ifu': 'ifudesign', 'cube_header_keyword': 'fits_header_keyword',
                                 'cube_header_value': 'fits_header_value', 'maps_header_keyword': 'header_keyword',
                                 'maps_header_value': 'header_value'}
         self._set_junk_shortcuts()
 
     def _init_name_shortcuts(self):
-        ''' initialize the name shortcuts '''
-        # self._nameShortcuts = {'haflux': 'emline_gflux_ha_6564',
-        #                        'g_r': 'elpetro_mag_g_r',
-        #                        'abs_g_r': 'elpetro_absmag_g_r'}
+        ''' initialize the name shortcuts
 
+        e.g {'haflux': 'emline_gflux_ha_6564',
+             'g_r': 'elpetro_mag_g_r',
+             'abs_g_r': 'elpetro_absmag_g_r'}
+
+        '''
         from marvin.utils.datamodel.query.base import query_params
         short = query_params.list_params(name_type='short')
         name = query_params.list_params(name_type='name')
         self._nameShortcuts = OrderedDict(zip(short, name))
 
-    def _apply_shortcuts(self, key):
+    def _init_full_shortcuts(self):
+        ''' initialize any full name shortcuts '''
+        self._fullShortcuts = {'cube_header.keyword':'fits_header_keyword.label',
+                               'cube_header.value':'fits_header_value.value',
+                               'maps_header.keyword':'header_keyword.name',
+                               'maps_header.value':'header_value.value'}
+
+    def _init_shortcuts(self):
+        ''' initialize the shortcuts '''
+        self._init_full_shortcuts()
+        self._init_table_shortcuts()
+        self._init_name_shortcuts()
+
+    def _apply_shortcuts(self, key, reverse=None):
         ''' Apply the shortcuts to the key '''
+
+        full = self._reverse_shorts(self._fullShortcuts) if reverse else self._fullShortcuts
+        schema = self._reverse_shorts(self._schemaShortcuts) if reverse else self._schemaShortcuts
+        table = self._reverse_shorts(self._tableShortcuts) if reverse else self._tableShortcuts
+        name = self._reverse_shorts(self._nameShortcuts) if reverse else self._nameShortcuts
+
+        # Apply any full name shortcuts
+        if key in full:
+            return full[key].split('.')
 
         # Gets the paths that match the key
         keySplits = key.split('.')
 
+        # Apply schema shortcuts
+        if len(keySplits) >= 3 and keySplits[-3] in schema:
+            keySplits[-3] = schema[keySplits[-3]]
+
         # Applies table shortcuts
-        if len(keySplits) >= 2 and keySplits[-2] in self._tableShortcuts:
-            keySplits[-2] = self._tableShortcuts[keySplits[-2]]
+        if len(keySplits) >= 2 and keySplits[-2] in table:
+            keySplits[-2] = table[keySplits[-2]]
 
         # Applies name shortcuts
-        if len(keySplits) >= 1 and keySplits[-1] in self._nameShortcuts:
-            keySplits[-1] = self._nameShortcuts[keySplits[-1]]
+        if len(keySplits) >= 1 and keySplits[-1] in name:
+            keySplits[-1] = name[keySplits[-1]]
 
         return keySplits
 
-    def _get_real_key(self, key):
-        ''' Returns the real full key given some shortcuts '''
+    def get_real_name(self, key):
+        ''' Returns the real full key given some shortcut names '''
         keySplits = self._apply_shortcuts(key)
         return '.'.join(keySplits)
+
+    def get_shortcut_name(self, key):
+        ''' Returns the shortcutted full name given a real key '''
+
+        keySplits = self._apply_shortcuts(key, reverse=True)
+        return '.'.join(keySplits)
+
+    def _reverse_shorts(self, data):
+        ''' Reverse a shorts dictionary '''
+        return {v: re.sub(r"spaxelprop[1-9]", "spaxelprop", k) for k, v in data.items()}
 
     def _set_junk_shortcuts(self):
         ''' Sets the DAP spaxelprop shortcuts based on MPL '''
 
-        newmpls = [m for m in config._mpldict.keys() if m >= 'MPL-4']
         spaxname = 'spaxelprop' if self.allspaxels else 'cleanspaxelprop'
-        if '4' in self._release:
-            dapcut = {'spaxelprop{0}'.format(m.split('-')[1]): spaxname for m in newmpls}
-            dapcut.update({'spaxelprop': spaxname})
-        else:
-            mdigit = self._release.split('-')[1]
-            dapcut = {'spaxelprop{0}'.format(m.split('-')[1]): '{0}{1}'.format(spaxname, mdigit) for m in newmpls}
-            dapcut.update({'spaxelprop': '{0}{1}'.format(spaxname, mdigit)})
 
-        # add junk shortcuts
-        junkcuts = {k.replace('spaxelprop', 'junk'): v for k, v in dapcut.items()}
-        dapcut.update(junkcuts)
+        # available spaxel property tables
+        dapcut = {}
+        spdict = marvindb.spaxelpropdict
+        if spdict:
+            # create a shortcut for each table that points to the current release
+            current = spdict.get(self._release, None)
+            for release, name in spdict.items():
+                if current:
+                    cut = {name.lower(): current.lower().replace('spaxelprop', spaxname)}
+                    dapcut.update(cut)
+
+            # since for DRs spaxelprop may not be in the dictionary a la MPL4: SpaxelProp
+            # we need to add it in so the shortcut "spaxelprop" can correctly point to the right db param
+            if 'spaxelprop' not in dapcut and current:
+                dapcut.update({'spaxelprop': current.lower().replace('spaxelprop', spaxname)})
 
         # update the main dictionary
         self._tableShortcuts.update(dapcut)
@@ -331,11 +371,11 @@ class ValidOperand(object):
 class SearchForm(Form):
     ''' Main Search Level WTForm for Marvin '''
 
-    searchbox = StringField("<a target='_blank' href='https://sdss-marvin.readthedocs.io/en/stable/tools/query/query_using.html'>Input Search Filter</a>",
-        [validators.Length(min=3, message='Input must have at least 3 characters'),
-                            validators.DataRequired(message='Input filter string required'),
-                            ValidOperand('[<>=between]', message='Input must contain a valid operand.')])
-    returnparams = SelectMultipleField("<a target='_blank' href='https://api.sdss.org/doc/manga/marvin/query_params.html'>Return Parameters</a>")
+    searchbox = StringField("<a target='_blank' href='https://sdss-marvin.readthedocs.io/en/stable/query/query/query_using.html'>Input Search Filter</a>",
+                            [validators.Length(min=3, message='Input must have at least 3 characters'),
+                             validators.DataRequired(message='Input filter string required'),
+                             ValidOperand('[<>=betweenradial]', message='Input must contain a valid operand.')])
+    returnparams = SelectMultipleField("<a target='_blank'>Return Parameters</a>")
     submitsearch = SubmitField('Search')
 
 
@@ -352,14 +392,16 @@ class MarvinForm(object):
         '''
 
         self._release = kwargs.get('release', config.release)
-        self._modelclasses = marvindb.buildUberClassDict(release=self._release)
-        self._param_form_lookup = ParamFormLookupDict(**kwargs)
-        self._param_fxn_lookup = ParamFxnLookupDict()
-        self._paramtree = tree()
-        self._generateFormClasses(self._modelclasses)
-        self._generateFxns()
-        self.SearchForm = SearchForm
-        self._cleanParams(**kwargs)
+        self.verbose = kwargs.get('verbose', False)
+        if marvindb:
+            self._modelclasses = FuzzyDict(marvindb.buildUberClassDict(release=self._release))
+            self._param_form_lookup = ParamFormLookupDict(**kwargs)
+            self._param_fxn_lookup = ParamFxnLookupDict()
+            self._paramtree = tree()
+            self._generateFormClasses(self._modelclasses)
+            self._generateFxns()
+            self.SearchForm = SearchForm
+            self._cleanParams(**kwargs)
 
     def __repr__(self):
         nforms = len([f for f in self.__dict__.keys() if 'Form' in f])
@@ -379,7 +421,8 @@ class MarvinForm(object):
             try:
                 newclass = formClassFactory(classname, val, ModelForm)
             except Exception as e:
-                warnings.warn('class {0} not Formable'.format(key), MarvinUserWarning)
+                if self.verbose:
+                    warnings.warn('class {0} not Formable'.format(key), MarvinUserWarning)
             else:
                 self.__setattr__(classname, newclass)
                 self._loadParams(newclass)
@@ -396,8 +439,7 @@ class MarvinForm(object):
 
         mapper = sa_inspect(model)
         for key, item in mapper.all_orm_descriptors.items():
-            if isinstance(item, hybrid_property) or \
-               isinstance(item, hybrid_method):
+            if isinstance(item, (hybrid_property, hybrid_method)):
                 key = key
             elif isinstance(item, InstrumentedAttribute):
                 key = item.key
@@ -421,7 +463,8 @@ class MarvinForm(object):
             The value is the method call that lives in Query
 
         '''
-        self._param_fxn_lookup['npergood'] = 'getPercent'
+        self._param_fxn_lookup['npergood'] = '_get_percent'
+        self._param_fxn_lookup['radial'] = '_radial_query'
 
     def _getDapKeys(self):
         ''' Returns the DAP keys from the Junk tables
@@ -444,3 +487,13 @@ class MarvinForm(object):
 
         # make new dictionary
         self._param_form_lookup = new
+
+    def look_up_table(self, table):
+        ''' Look up a database table and return the ModelClass '''
+
+        try:
+            table_class = self._modelclasses[table]
+        except (ValueError, TypeError) as e:
+            table_class = None
+
+        return table_class

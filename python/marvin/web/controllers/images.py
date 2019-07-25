@@ -13,11 +13,11 @@ Revision History:
 from __future__ import print_function
 from __future__ import division
 from flask import Blueprint, render_template, request
-from flask_classful import FlaskView, route
+from flask_classful import route
 from brain.api.base import processRequest
 from marvin.core.exceptions import MarvinError
 from marvin.utils.general import getRandomImages
-from marvin.web.web_utils import buildImageDict, parseSession
+from marvin.web.web_utils import buildImageDict
 from marvin.web.controllers import BaseWebView
 
 images = Blueprint("images_page", __name__)
@@ -48,7 +48,7 @@ class Random(BaseWebView):
         imfiles = None
         try:
             imfiles = getRandomImages(as_url=True, num=self.random['imnumber'], mode='local', release=self._release)
-        except MarvinError as e:
+        except (MarvinError, AssertionError) as e:
             self.random['error'] = 'Error: could not get images: {0}'.format(e)
         else:
             images = buildImageDict(imfiles)

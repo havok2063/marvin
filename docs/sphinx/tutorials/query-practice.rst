@@ -27,9 +27,9 @@ Good Idea
 .. code-block:: python
 
     from marvin.tools.query import Query
-    filter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25'
+    myfilter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25'
     params = ['emline_gflux_hb_4862', 'stellar_vel', 'nii_to_ha']
-    q = Query(searchfilter=filter, returnparams=params)
+    q = Query(search_filter=myfilter, return_params=params)
     r = q.run()
 
     # get list of stellar velocities
@@ -44,8 +44,8 @@ Bad Idea
 .. code-block:: python
 
     from marvin.tools.query import Query
-    filter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25'
-    q = Query(searchfilter=filter)
+    myfilter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25'
+    q = Query(search_filter=myfilter)
     r = q.run()
     r.convertToTool('spaxel')
 
@@ -65,11 +65,11 @@ Good Idea
 .. code-block:: python
 
     from marvin.tools.query import Query
-    filter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25'
+    myfilter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25'
     params = ['emline_gflux_hb_4862', 'stellar_vel', 'nii_to_ha']
-    q = Query(searchfilter=filter, returnparams=params, limit=10000)
+    q = Query(search_filter=myfilter, return_params=params, limit=10000)
     r = q.run()
-    Results contain of a total of 62065, only returning the first 10000 results
+    # Results contain of a total of 62065, only returning the first 10000 results
 
     # I want to collect all the results.  I can do fewer loops.
     uberresults = []
@@ -85,11 +85,11 @@ Bad Idea
 .. code-block:: python
 
     from marvin.tools.query import Query
-    filter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25'
+    myfilter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25'
     params = ['emline_gflux_hb_4862', 'stellar_vel', 'nii_to_ha']
-    q = Query(searchfilter=filter, returnparams=params)
+    q = Query(search_filter=myfilter, return_params=params)
     r = q.run()
-    Results contain of a total of 62065, only returning the first 100 results
+    # Results contain of a total of 62065, only returning the first 100 results
 
     # I don't want to loop over 62,000 results in chunks of 100
 
@@ -103,11 +103,11 @@ Good Idea
 .. code-block:: python
 
     from marvin.tools.query import Query
-    filter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25'
+    myfilter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25'
     params = ['emline_gflux_hb_4862', 'stellar_vel', 'nii_to_ha']
-    q = Query(searchfilter=filter, returnparams=params, limit=10000)
+    q = Query(search_filter=myfilter, return_params=params, limit=10000)
     r = q.run()
-    f='results_{0}_chunk{1}_to_{2}.mpf'.format(p.replace(' ','_'), r.start, r.end)
+    f ='results_{0}_chunk{1}_to_{2}.mpf'.format(p.replace(' ','_'), r.start, r.end)
     r.save(f)
 
     # loop over and pickle each set of results
@@ -136,12 +136,12 @@ Good Idea
     from marvin.tools.query import Query
 
     # Let's only get unbinned spaxels (i.e. bintype.name == 'SPX')
-    filter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25 and bintype.name==SPX'
+    myfilter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25 and bintype.name==SPX'
 
     params = ['emline_gflux_hb_4862', 'stellar_vel', 'nii_to_ha', 'bintype.name', 'template.name']
-    q = Query(searchfilter=filter, returnparams=params, limit=10000)
+    q = Query(search_filter=myfilter, return_params=params, limit=10000)
     r = q.run()
-    Results contain of a total of 22054, only returning the first 10000 results
+    # Results contain of a total of 22054, only returning the first 10000 results
 
     # Now our results only contain a total of 22000. Much more manageable.
 
@@ -151,11 +151,11 @@ Bad Idea
 .. code-block:: python
 
     from marvin.tools.query import Query
-    filter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25'
+    myfilter = 'nsa.z < 0.1 and emline_gflux_ha_6564 > 25'
     params = ['emline_gflux_hb_4862', 'stellar_vel', 'nii_to_ha', 'bintype.name', 'template.name']
-    q = Query(searchfilter=filter, returnparams=params, limit=10000)
+    q = Query(search_filter=myfilter, return_params=params, limit=10000)
     r = q.run()
-    Results contain of a total of 62065, only returning the first 10000 results
+    # Results contain of a total of 62065, only returning the first 10000 results
 
     # This list contains spaxels from all four bintypes.
     set(r.getListOf('bintype.name'))
@@ -163,6 +163,3 @@ Bad Idea
 
 
 If you find other tips and tricks to improve querying, let us know and we shall include it for all to see.
-
-
-

@@ -12,16 +12,34 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
+# flake8: noqa
+# isort:skip_file
+
 import os
+import subprocess
+import sys
+
+# Hotfix to make sure local mode works
+os.environ['MANGA_LOCALHOST'] = '1'
 
 # Importing matplotlib here with agg to prevent tkinter error in readthedocs
-import matplotlib
+import matplotlib  # noqa
+import matplotlib.sphinxext.plot_directive
+
 matplotlib.use('agg')
 
-# Comment if you do not want to use bootstrap themes.
-import sphinx_bootstrap_theme
+
+from sphinx.ext.napoleon.docstring import GoogleDocstring
+
 import marvin
+
+if marvin.config.db is not None:
+    marvin.config.forceDbOff()
+
+
+# Comment if you do not want to use bootstrap themes.
+import sphinx_rtd_theme
+
 
 try:
     marvin_version = marvin.__version__
@@ -47,13 +65,14 @@ sys.path.insert(0, os.path.abspath('../../python/marvin/utils/datamodel/'))
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx.ext.autosummary',
     'sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx.ext.mathjax',
-    'matplotlib.sphinxext.only_directives',
-    'matplotlib.sphinxext.plot_directive',
-    'sphinxcontrib.httpdomain', 'sphinxcontrib.autohttp.flask',
-    'sphinxcontrib.autohttp.flaskqref',
     'sphinx.ext.inheritance_diagram', 'sphinx.ext.graphviz',
-    'IPython.sphinxext.ipython_console_highlighting',
-    'IPython.sphinxext.ipython_directive', 'sphinx.ext.intersphinx', 'docudatamodel']
+    'matplotlib.sphinxext.plot_directive',
+    'sphinxcontrib.httpdomain',
+    'sphinxcontrib.autohttp.flask',
+    'sphinxcontrib.autohttp.flaskqref',
+    'sphinx.ext.inheritance_diagram',
+    'sphinx.ext.intersphinx', 'docudatamodel',
+    'sphinx_issues', 'nbsphinx']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -72,7 +91,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Marvin'
-copyright = u'2016-2017, Brian Cherinka, Brett Andrews, and José Sánchez-Gallego'
+copyright = u'2016-2019, Brian Cherinka, Brett Andrews, and José Sánchez-Gallego'
 author = u'Brian Cherinka, Brett Andrews, and José Sánchez-Gallego'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -91,6 +110,11 @@ release = marvin_version
 # Usually you set "language" from the command line for these cases.
 language = None
 
+highlight_language = 'default'
+
+# Include TODOs when todolist:: is used?
+todo_include_todos = True
+
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
 # today = ''
@@ -100,11 +124,13 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
 default_role = 'py:obj'
+
+issues_github_path = 'sdss/marvin'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 # add_function_parentheses = True
@@ -130,7 +156,9 @@ pygments_style = 'sphinx'
 intersphinx_mapping = {'python': ('https://docs.python.org/3.6', None),
                        'astropy': ('http://docs.astropy.org/en/latest', None),
                        'numpy': ('http://docs.scipy.org/doc/numpy/', None),
-                       'pandas': ('http://pandas.pydata.org/pandas-docs/stable/', None)}
+                       'pandas': ('http://pandas.pydata.org/pandas-docs/stable/', None),
+                       'matplotlib': ('https://matplotlib.org/', None),
+                       'photutils': ('http://photutils.readthedocs.io/en/stable/', None)}
 
 autodoc_member_order = 'groupwise'
 modindex_common_prefix = ['marvin.']
@@ -148,79 +176,19 @@ rst_epilog = """
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'bootstrap'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
+
 html_theme_options = {
-    # Navigation bar title. (Default: ``project`` value)
-    'navbar_title': "Marvin Docs",
-
-    # Tab name for entire site. (Default: "Site")
-    'navbar_site_name': "Site",
-
-    # A list of tuples containing pages or urls to link to.
-    # Valid tuples should be in the following forms:
-    #    (name, page)                 # a link to a page
-    #    (name, "/aa/bb", 1)          # a link to an arbitrary relative url
-    #    (name, "http://example.com", True) # arbitrary absolute url
-    # Note the "1" or "True" value above as the third argument to indicate
-    # an arbitrary url.
-    'navbar_links': [
-        ("Go to Marvin &raquo;", "https://sas.sdss.org/marvin2/", True),
-        ("Cheatsheet", "cheatsheet"),
-        ("Tutorials", "tutorials"),
-        ("New Issue", "https://github.com/sdss/marvin/issues/new", True)
-    ],
-
-    # Render the next and previous page links in navbar. (Default: true)
-    'navbar_sidebarrel': False,
-
-    # Render the current pages TOC in the navbar. (Default: true)
-    'navbar_pagenav': True,
-
-    # Tab name for the current pages TOC. (Default: "Page")
-    'navbar_pagenav_name': "Page",
-
-    # Global TOC depth for "site" navbar tab. (Default: 1)
-    # Switching to -1 shows all levels.
-    'globaltoc_depth': 2,
-
-    # Include hidden TOCs in Site navbar?
-    #
-    # Note: If this is "false", you cannot have mixed ``:hidden:`` and
-    # non-hidden ``toctree`` directives in the same page, or else the build
-    # will break.
-    #
-    # Values: "true" (default) or "false"
-    'globaltoc_includehidden': "true",
-
-    # HTML navbar class (Default: "navbar") to attach to <div> element.
-    # For black navbar, do "navbar navbar-inverse"
-    'navbar_class': "navbar",
-
-    # Fix navigation bar to top of page?
-    # Values: "true" (default) or "false"
-    'navbar_fixed_top': "true",
-
-    # Location of link to source.
-    # Options are "nav" (default), "footer" or anything else to exclude.
-    'source_link_position': "nav",
-
-    # Bootswatch (http://bootswatch.com/) theme.
-    #
-    # Options are nothing (default) or the name of a valid theme
-    # such as "amelia" or "cosmo".
-    'bootswatch_theme': "flatly",
-
-    # Choose Bootstrap version.
-    # Values: "3" (default) or "2" (in quotes)
-    'bootstrap_version': "3",
+    'collapse_navigation': True,
+    'includehidden': True
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
@@ -258,8 +226,8 @@ html_static_path = ['_static']
 # html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-# html_sidebars = {'**': ['globaltoc.html', 'sourcelink.html', 'searchbox.html']}
-html_sidebars = {'**': ['localtoc.html']}
+# html_sidebars = {'**': ['localtoc.html']}
+html_sidebars = {'**': ['searchbox.html', 'globaltoc.html', 'sourcelink.html']}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -390,9 +358,14 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
 
+# -- Options for nbsphinx -----------------------------------------
+
+nbsphinx_prolog = """:download:`Download this as a Jupyter notebook! </{{ env.doc2path(env.docname, base=None) }}>`"""
+nbsphinx_allow_errors = True
+nbsphinx_execute = 'never'
+
 # -- Extensions to the  Napoleon GoogleDocstring class ---------------------
 
-from sphinx.ext.napoleon.docstring import GoogleDocstring
 
 
 # first, we define new methods for any new sections and add them to the class
@@ -410,6 +383,35 @@ GoogleDocstring._unpatched_parse = GoogleDocstring._parse
 GoogleDocstring._parse = patched_parse
 
 
+# plot_pre_code = """
+# import matplotlib.pyplot as plt
+
+# plt.style.use(['seaborn-dark', 'seaborn-darkgrid'])
+# """
+
+# plot_apply_rcparams = False
+
+# plot_formats = [('png', 100)]
+
+
+def get_test_data():
+
+    url = 'https://sas.sdss.org/marvin/data/sas_rtd.tar.bz2'
+
+    os.chdir(os.path.expanduser('~/'))
+
+    subprocess.run(['wget', '-q', url, os.path.expanduser('~/')])
+    ret = subprocess.run(['tar', 'xvf', 'sas_rtd.tar.bz2'])
+
+    assert ret.returncode == 0, 'failed to download or uncompress the test data.'
+
+    print('SAS data uncompressed')
+
+
 # -- Use the custom css file in readthedocs --
 def setup(app):
     app.add_stylesheet('custom.css')
+    app.add_javascript('copybutton.js')
+
+    if os.environ.get('READTHEDOCS') == 'True':
+        get_test_data()

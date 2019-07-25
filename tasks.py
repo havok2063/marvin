@@ -5,11 +5,13 @@
 #
 # @Author: Brian Cherinka
 # @Date:   2017-06-10 16:46:40
-# @Last modified by:   Brian Cherinka
-# @Last Modified time: 2018-04-26 09:25:33
+# @Last modified by: José Sánchez-Gallego (gallegoj@uw.edu)
+# @Last modified time: 2018-11-14 19:37:22
 
-from __future__ import print_function, division, absolute_import
+from __future__ import absolute_import, division, print_function
+
 import os
+
 from invoke import Collection, task
 
 
@@ -25,11 +27,16 @@ def clean_docs(ctx):
 
 
 @task
-def build_docs(ctx):
+def build_docs(ctx, clean=False):
     ''' Builds the Sphinx docs '''
+
+    if clean:
+        print('Cleaning the docs')
+        ctx.run("rm -rf docs/sphinx/_build")
+
     print('Building the docs')
     os.chdir('docs/sphinx')
-    ctx.run("make html")
+    ctx.run("make html", pty=True)
 
 
 @task
@@ -132,7 +139,7 @@ def update_current(ctx, version=None):
 def switch_module(ctx, version=None):
     ''' Switch to the marvin module of the specified version and start it '''
     assert version is not None, 'A version is required to setup Marvin at Utah!'
-    ctx.run('uwsgi --stop /home/www/sas.sdss.org/mangawork/marvin/pid/uwsgi_marvin2.pid')
+    ctx.run('uwsgi --stop /home/www/sas.sdss.org/mangawork/marvin/pid/uwsgi_marvin.pid')
     ctx.run('module unload wrapmarvin')
     ctx.run('module load wrapmarvin/mangawork.marvin_{0}'.format(version))
     ctx.run('uwsgi /home/manga/software/git/manga/marvin/{0}/python/marvin/web/uwsgi_conf_files/uwsgi_marvin_mangawork.ini'.format(version))
@@ -174,6 +181,8 @@ def setup_utah(ctx, version=None):
     # print('Please run ...\n stopmarvin \n module switch wrapmarvin '
     #       'wrapmarvin/mangawork.marvin_{0} \n startmarvin \n'.format(version))
 
+
+os.chdir(os.path.dirname(__file__))
 
 ns = Collection(clean, deploy, setup_utah)
 docs = Collection('docs')

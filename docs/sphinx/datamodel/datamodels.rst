@@ -17,10 +17,12 @@ Generally all datamodels provide a `parameter/property name`, `description`, `un
 By Release
 ----------
 
-* :ref:`datamodel-mpl4`
-* :ref:`datamodel-mpl5`
+* :ref:`datamodel-mpl8`
+* :ref:`datamodel-dr15`
+* :ref:`datamodel-mpl7`
 * :ref:`datamodel-mpl6`
-
+* :ref:`datamodel-mpl5`
+* :ref:`datamodel-mpl4`
 
 DRP Datamodel
 -------------

@@ -9,35 +9,38 @@ Acknowledging and Citing Marvin
 In Publications
 ^^^^^^^^^^^^^^^
 
-If you use Marvin for work/research presented in a publication (whether directly, or as a dependency to another package), we ask that you cite the `Marvin Software <https://zenodo.org/record/1146705>`_. We provide the following as a standard acknowledgment you can use if there is not a specific place to cite the DOI:
+If you use Marvin (including the `web interface <https://dr15.sdss.org/marvin>`_) for work/research presented in a publication (whether directly, or as a dependency to another package), we ask that you cite the `Marvin paper <http://adsabs.harvard.edu/abs/2018arXiv181203833C>`_ with the following bibtex entry::
 
-    *This research made use of Marvin, a core Python package and web framework for MaNGA data, developed by Brian Cherinka,
-    José Sánchez-Gallego, Brett Andrews, and Joel Brownstein. (MaNGA Collaboration, 2018).*
-
-Marvin's Bibtex entry to use::
-
-    @misc{brian_cherinka_2018_1146705,
-      author       = {Brian Cherinka and
-                      José Sánchez-Gallego and
-                      Brett Andrews and
-                      Joel Brownstein},
-      title        = {sdss/marvin: Marvin Beta 2.2.0},
-      month        = jan,
-      year         = 2018,
-      doi          = {10.5281/zenodo.1146705},
-      url          = {https://doi.org/10.5281/zenodo.1146705}
+    @ARTICLE{2018arXiv181203833C,
+       author = {{Cherinka}, B. and {Andrews}, B.~H. and {S{\'a}nchez-Gallego}, J. and
+    	{Brownstein}, J. and {Argudo-Fern{\'a}ndez}, M. and {Blanton}, M. and
+    	{Bundy}, K. and {Jones}, A. and {Masters}, K. and {Law}, D.~R. and
+    	{Rowlands}, K. and {Weijmans}, A.-M. and {Westfall}, K. and
+    	{Yan}, R.},
+        title = "{Marvin: A Toolkit for Streamlined Access and Visualization of the SDSS-IV MaNGA Data Set}",
+      journal = {arXiv e-prints},
+    archivePrefix = "arXiv",
+       eprint = {1812.03833},
+     primaryClass = "astro-ph.IM",
+     keywords = {Astrophysics - Instrumentation and Methods for Astrophysics, Astrophysics - Astrophysics of Galaxies},
+         year = 2018,
+        month = dec,
+       adsurl = {http://adsabs.harvard.edu/abs/2018arXiv181203833C},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
     }
 
-If you wish, you can also include a link to https://api.sdss.org/doc/manga/marvin in addition to the above text.
+For AAS publications, please see their `software citation guidelines <https://journals.aas.org/policy-statement-on-software/>`_.  If you wish, you can also links to any or all of the following sites:
+
+* Marvin documentation http://sdss-marvin.readthedocs.io/en/stable/,
+* Marvin web interface https://dr15.sdss.org/marvin, or
+* Marvin Zenodo https://zenodo.org/record/596700.
+
 
 In Presentations
 ^^^^^^^^^^^^^^^^
 
-* Please provide a link to the Marvin website: https://sas.sdss.org/marvin2/
+* Please provide a link to the Marvin website: https://dr15.sdss.org/marvin/
 * Please include an installation reference: `pip install sdss-marvin`
 
-In Projects
-^^^^^^^^^^^
 
 .. If you are using Marvin as part of a code project (e.g., affiliated packages), a useful way to acknowledge your use of Marvin is with a badge in your README. We suggest this badge:
-

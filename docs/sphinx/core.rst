@@ -6,7 +6,7 @@ Marvin internals (marvin.core)
 
 This section describes how Marvin works internally. Most users do not need to understand all of these details. However, they are important if you plan to write contributed code or if you are forking Marvin.
 
-Regardless of how you use Marvin, it is always a good idea to have a general understanding of the :ref:`configuration <marvin-config-info>` system and the :ref:`data access modes <marvin-dma>`.
+Regardless of how you use Marvin, it is always a good idea to have a general understanding of the :ref:`configuration <marvin-config-info>` system and the :ref:`data access modes <marvin-dam>`.
 
 MarvinToolsClass
 ----------------
@@ -17,8 +17,8 @@ MarvinToolsClass
 
 Generic methods for `pickling <pickle>` and unpickling the subclassed objects are implemented in `.MarvinToolsClass.save` and `.MarvinToolsClass.restore`. While these work in most cases, depending on the specifics of the subclass some additional handling may be necessary.
 
-.. autoclass:: marvin.core.core.MarvinToolsClass
-   :members: download, save, restore, release, _getFullPath, _set_datamodel
+.. autoclass:: marvin.tools.core.MarvinToolsClass
+   :members: download, save, restore, release, _getFullPath, _set_datamodel, getImage
 
 Mixins
 ------
@@ -47,7 +47,7 @@ An example of a class that uses both `.NSAMixIn` and `.DAPallMixIn` would be
 
 note that we use a direct call to ``__init__`` instead of `super` to make sure that both parent classes are initialised.
 
-.. automodule:: marvin.core.core
+.. automodule:: marvin.tools.core
    :members: NSAMixIn, DAPallMixIn
 
 
@@ -57,5 +57,5 @@ Further reading
 ===============
 
 * The configuration class (:ref:`marvin.config <marvin-config-info>`)
-* :ref:`marvin-dma`
+* :ref:`marvin-dam`
 * :ref:`marvin-download-objects`

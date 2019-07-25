@@ -1,12 +1,136 @@
 Marvin's Change Log
 ===================
 
-[2.2.6] - 2018/?/?
+[2.3.3] - unreleased
+--------------------
+
+Changed
+^^^^^^^
+- all yaml.load uses new Loader to accommodate old and new yaml spec;
+- updated Runtime Issues documentation to include section on numpy.ufunc binary warnings
+- added to reprs for some db ModelClasses
+
+Fixed
+^^^^^
+- Issue :issue:`658` - modelcube datamodel units missing angstrom
+- Issue :issue:`655` - added yaml loader to remove yaml warnings for 5.1 spec
+- Fixed bug when server tries to access NSA on cube when none exists and triggers remote authentication issue
+- Issue :issue:`664` - Fixed link to MaNGA's Getting Started in docs.
+
+
+[2.3.2] - 2019/02/27
 --------------------
 
 Added
 ^^^^^
+- Support for MPL-8
+
+Fixed
+^^^^^
+- Issue :issue:`629` - web table of search results broken
+- Issue :issue:`627` - web query displaying error message
+- Issue :issue:`630` - broken web links on query page
+- Issue :issue:`591` - broken query streaming return all results
+
+[2.3.1] - 2018/12/10
+--------------------
+
+Refactored
+^^^^^^^^^^
+- The entire Sphinx documentation
+
+
+[2.3.0] - 2018/12/03
+--------------------
+
+Breaking changes
+^^^^^^^^^^^^^^^^
+- Removed ``Bin`` class. Bin information is now available on a per-quantity basis (:issue:`109`). See :ref:`What's new? <whats-new>` and documentation for details.
+- Syntax on the inputs to the ``Query`` and ``Results`` tools has been changed.
+- DAP spaxel queries have been disabled due to performance issues. We expect to bring them back soon. Metadata queries (those querying the NSA or DAPall tables) are still available.
+- ``getSpaxel`` now only loads the quantities from the parent object (that means that, for example, ``Maps.getSpaxel`` only loads ``Maps`` properties by default). Additional quantities can be loaded using `~marvin.tools.spaxel.Spaxel.load`.
+- ``getSpaxel`` accepted arguments have been changed to ``cube``, ``maps``, and ``modelcube``. The formerly accepted arguments (``drp``, ``properties``, ``model(s)``) now raise a deprecation error.
+
+Added
+^^^^^
 - Added cheatsheet to docs.
+- New Web authentication using Flask-Login
+- New API authentication using Flask-JWT-Extended
+- Adds MPL-7 / DR15 datamodel
+- New config.access attribute indicating public or collab access
+- New config.login method to handle token-based login
+- New marvin.yml config file for customization of configuration options
+- Adds User table into the history schema of mangadb.  Tracks user logins.
+- ``Map`` has a new method ``getSpaxel`` to retrieve an ``Spaxel`` using the parent ``Maps``.
+- New configuration option in ``marvin.yml``, ``default_release``, to set the release to be used when Marvin gets imported (:issue:`463`).
+- Applying a NumPy ufunc (except ``np.log10()``) raises ``NotImplementedError`` because ivar propagation is not implemented yet.
+- New ``Marvin Image`` Tool to load optical images using the MMA (:issue:`22`)
+- New ``Bundle`` and ``Cutout`` utility classes
+- New ``MMAMixIn`` for providing multi-modal data access
+- ``qual_flag`` and ``pixmask_flag`` are now stored in the datamodel (:issue:`479,482`).
+- ``Query`` tool now accepts a new ``targets`` and ``quality`` keyword argument which enables querying on target or quality maskbit labels. (:issue:`485`)
+- Added a new API route for streaming large query results.  This uses a generator to stream large results back to the client to minimize memory usage and bulk responses.
+
+Changed
+^^^^^^^
+- Integrated datamodel plotting params into actual datamodel structures
+- Moved netrc checks into the Brain
+- Expanded sasurl into public and collab urls
+- Changes personal emails to sdss helpdesk email in web
+- Added rawsql and return_params columns to history.query table in mangadb
+- Extra keyword arguments passed to ``Spectrum.plot`` are now forwarded to ``Axes.plot``.
+- Tools (e.g., ``Cube``, ``Maps``) can now be accessed from the ``marvin`` namespace (e.g., ``marvin.tools.Cube`` or ``marvin.tools.cube.Cube``).
+- Map plotting ``ax_setup()`` function is now hidden.
+- Moved ``yanny.py`` to ``extern/`` and added a readme file for the external packages (:issue:`468`).
+- `~marvin.tools.quantities.Spectrum.plot` now only masks part of the spectrum that have the ``DONOTUSE`` maskbit set (:issue:`455`).
+- ``pixmask`` is now available for all quantities (except ``AnalysisProprty``). The property ``masked`` now uses the bit ``DONOTUSE`` to determine what values must be masked out (:issue:`462`).
+- Raises error when applying ``inst_sigma_correction`` on ``stellar_sigma`` MPL-6 maps.  Applies correction to stellar_sigma and emline_sigma for web maps with added 'Corrected' title (:issue:`478`)
+- Removes targeting bits from ``Spaxel`` and ``Bin`` (:issue:`465`).
+- The name of the channel is now shown in the ``Property`` description (:issue:`424`).
+- Replaced inconsistent parameter ``model`` in `~marvin.tools.maps.Maps.getSpaxel`. Use ``models`` instead.
+- MarvinError now accepts an optional `ignore_git` keyword to locally turn off the git addition to the message
+- Using the `return_all` keyword in ``Query`` or `getAll` in ``Results`` now calls the streaming API route instead.
+- When `~marvin.tool.cube.Cube` or `~marvin.tool.modelcube.ModelCube` are instantiated from file, gunzip the file to a temporary location to speed up subsequent access (:issue:`525`).
+- Convert MMA warnings to debug messages (:issues:`580`).
+
+Fixed
+^^^^^
+- Issue :issue:`421` - query returning spaxel props returns wrong total count
+- Bugfix - Python 3 xrange syntax bug in buildImageDict
+- ``Bin._create_spaxels`` instantiating spaxels with the wrong ``(i,j)`` values for the bin. The ``(i, j)`` values from the ``binid`` map were being swapped twice before sending them to ``SpaxelBase`` (:issue:`457`).
+- A bug in the calculation of the deredden inverse variance in a `~marvin.tools.quantities.datacube.DataCube`.
+- Issue with setting drpall path on initial import/set of release before tree has been planted
+- Issue :issue:`456` - spectrum web display shows incorrect RA, Dec
+- Issue :issue:`422` - ensuring config auto checks access to netrc
+- Issue :issue:`423` - adding marvin.yml documentation
+- Issue :issue:`431` - adding login documentation
+- Issue :issue:`151` - adding web spectrum tooltips
+- Issue :issue:`548` - failed to retrieve ModelCube extension in remote mode
+- Fixed typo by in method name ``Spectrum.derredden -> Spectrum.deredden``.
+- Fixed `#305 <https://github.com/sdss/marvin/issues/305>`_ - adding ivar propogation for np.log10(Map)
+- A bug when explicitly returning default parameters in a query (:issue:`484`)
+- Fixed `#510 <https://github.com/sdss/marvin/issues/510>`_ - fixes incorrect conversion to sky coordinates in map plotting.
+- Fixed `#563 <https://github.com/sdss/marvin/issues/563>`_ - fail retrieving Query datamodels in Python 3.6+.
+- Fixes bug with sasurl not properly being set to api.sdss.org on initial import
+- Incorrect setting of the default bintype to download from web (:issue:`531`).
+- Fixed :issue:`536`, :issue:`537`, :issue:`538`.  Added modelcube to downloadList.
+- Incorrect mismatch warning between MPL-7 and DR15 (:issue:`495`).
+- Incorrect handling of maskbits when the mask does not contain any of the bits in the list (:issue:`507`).
+- Fixed :issue:`534` - flipped axes in NSA scatterplot when plotting absmag colors
+- Fixed :issue:`559` - bug in check_marvin when marvindb is None
+- Fixed :issue:`579` - bug in MMA with marvindb preventing files from opening
+- Fixed :issue:`543`, :issue:`552`, :issue:`553` - bugs with various Query handlings
+- Fixed :issue:`575` - cannot access maps due to bug in login and authentication in Interaction class
+- Fixed :issue:`539` - print downloadList target directory
+- Fixed :issue:`566` - made error message for web query with non-unique parameters name more specific
+
+Refactored
+^^^^^^^^^^
+- Moved `marvin.core.core` to `marvin.tools.core` and split the mixins into `marvin.tools.mixins`.
+- Reimplemented `~marvin.tools.mixins.aperture.GetApertureMixIn.getAperture` as a mixin using photutils apertures (:issue:`3,315`).
+- Reimplemented `~marvin.tools.rss.RSS` as a list of `~marvin.tools.rss.RSSFiber` objects (:issue:`27,504`).
+- Moved pieces of MarvinToolsClass into `marvin.tools.mixins`.
+- Reimplemented `~marvin.tools.query.Query` to remove local query dependencies from remote mode usage.
 
 
 [2.2.5] - 2018/04/26
@@ -141,7 +265,7 @@ Fixed
 --------------------
 
 Fixed
-~~~~~
+^^^^^
 
 - bugfix in MPL-6 datamodel for gew OII lines
 
@@ -149,7 +273,7 @@ Fixed
 --------------------
 
 Added
-~~~~~
+^^^^^
 
 -  Added ``Maskbit`` class for easy conversion between mask values, bits, and
    labels.
@@ -164,7 +288,7 @@ Added
 -  Access to DAPall data
 
 Changed
-~~~~~~~
+^^^^^^^
 
 -  Issue `#190 <https://github.com/sdss/marvin/issues/190>`_: ``Maps.get_bpt()`` and
    ``marvin.utils.dap.bpt.bpt_kewley06()`` now also return a list of
@@ -176,7 +300,7 @@ Changed
 -  Bin and Spaxel are now subclassed from SpaxelBase
 
 Fixed
-~~~~~
+^^^^^
 
 - Issue `#24 <https://github.com/sdss/marvin/issues/24>`_
 - Issue `#99 <https://github.com/sdss/marvin/issues/99>`_
@@ -220,7 +344,7 @@ Fixed
 --------------------
 
 Added
-~~~~~
+^^^^^
 
 -  Added new query_params object, for easier navigation of available
    query parameters. Added new tests.
@@ -232,7 +356,7 @@ Added
    routes and 60/minute for query api calls and web searches
 
 Changed
-~~~~~~~
+^^^^^^^
 
 -  Changed call signature for
    :meth:``marvin.utils.plot.map.no_coverage_mask`` (removed ``value``
@@ -252,7 +376,7 @@ Changed
    SkyServer and updated link to public up-to-date link
 
 Fixed
-~~~~~
+^^^^^
 
 -  Issue `#102 <https://github.com/sdss/marvin/issues/102>`_: problem with urllib package when attempting to retrieve
    the Marvin URLMap
@@ -292,7 +416,7 @@ Fixed
 --------------------
 
 Added
-~~~~~
+^^^^^
 
 -  Issue `#204 <https://github.com/sdss/marvin/issues/204>`_: added elpetro_absmag colours to mangaSampleDB models.
 -  Issue `#253 <https://github.com/sdss/marvin/issues/253>`_: Plotting tutorial.
@@ -309,7 +433,7 @@ Added
 -  Added ``tools.map`` doc page.
 
 Changed
-~~~~~~~
+^^^^^^^
 
 -  Issue `#243 <https://github.com/sdss/marvin/issues/243>`_: inverted ``__getitem__`` behaviour for
    Cube/Maps/ModelCube and fixed tests.
@@ -334,7 +458,7 @@ Changed
    onto second line and overlap plot.
 
 Fixed
-~~~~~
+^^^^^
 
 -  Interactive prompt for username in sdss_access now works for Python
    3.
@@ -354,7 +478,7 @@ Fixed
 -  Highcharts draggable legend cdn.
 
 Removed
-~~~~~~~
+^^^^^^^
 
 -  Issue #232 and Issue `#251 <https://github.com/sdss/marvin/issues/251>`_: Automatic setting of matplotlib style
    sheets via seaborn import or ``plt.style.use()``.
@@ -364,13 +488,13 @@ Removed
 --------------------
 
 Added
-~~~~~
+^^^^^
 
 -  API and Web argument validation using webargs and marshmallow. If
    parameters invalid, returns 422 status.
 
 Changed
-~~~~~~~
+^^^^^^^
 
 -  Per Issue `#186 <https://github.com/sdss/marvin/issues/186>`_: Switched to using the elpetro version of stellar
    mass, absolute magnitude i-band, and i-band mass-to-light ratio for
@@ -384,7 +508,7 @@ Changed
    all Marvin web documenation links to point to readthedocs.
 
 Fixed
-~~~~~
+^^^^^
 
 -  A bug in the calculation of the composite mask for BPT.
 -  Issue `#179 <https://github.com/sdss/marvin/issues/179>`_: Fixed a python 2/3 exception error compatibility with the
@@ -395,13 +519,13 @@ Fixed
 --------------------
 
 Added
-~~~~~
+^^^^^
 
 -  Added query runtime output in search page html. And a warning if
    query is larger than 20 seconds.
 
 Changed
-~~~~~~~
+^^^^^^^
 
 -  Removed the python 3 raise Exception in the check_marvin bin
 -  Reverted the api/query return output from jsonify back to json.dumps
@@ -409,7 +533,7 @@ Changed
    -  This is an issue with python 2.7.3 namedtuple vs 2.7.11+
 
 Fixed
-~~~~~
+^^^^^
 
 -  Issue `#181 <https://github.com/sdss/marvin/issues/181>`_: web display of maps were inverted; changed to xyz[jj, ii,
    val] in heatmap.js
@@ -420,7 +544,7 @@ Fixed
 --------------------
 
 Added
-~~~~~
+^^^^^
 
 -  Restructured documentation index page.
 -  Improved installation documentation:
@@ -469,7 +593,7 @@ Added
    mangaSampleDB or drpall.
 
 Changed
-~~~~~~~
+^^^^^^^
 
 -  When marvin is running from source (not dist), ``marvin.__version__``
    is ``dev``.
@@ -524,7 +648,7 @@ Changed
    1024 mb for production environment
 
 Fixed
-~~~~~
+^^^^^
 
 -  Issue `#115 <https://github.com/sdss/marvin/issues/115>`_: drpall does not get updated when a tool sets a custom
    release.
@@ -547,12 +671,12 @@ Fixed
 --------------------
 
 Added
-~~~~~
+^^^^^
 
 -  Docs now use ``marvin.__version__``.
 
 Fixed
-~~~~~
+^^^^^
 
 -  Fixed #100, `#103 <https://github.com/sdss/marvin/issues/103>`_: problem with getMap for properties without ivar.
 -  Fixed `#101 <https://github.com/sdss/marvin/issues/101>`_: problem with marvin query.
@@ -562,7 +686,7 @@ Fixed
 --------------------
 
 Fixed
-~~~~~
+^^^^^
 
 -  Now really fixing #98
 
@@ -573,7 +697,7 @@ Fixed
 --------------------
 
 Fixed
-~~~~~
+^^^^^
 
 -  Fixed issue #98
 
@@ -582,7 +706,7 @@ Fixed
 --------------------
 
 Fixed
-~~~~~
+^^^^^
 
 -  Bug in Queries with dap query check running in remote mode. Param
    form is empty.
@@ -592,13 +716,13 @@ Fixed
 --------------------
 
 Added
-~~~~~
+^^^^^
 
 -  Added netrc configuration to installation documentation.
 -  Added netrc check on init.
 
 Fixed
-~~~~~
+^^^^^
 
 -  Added mask to model spaxel.
 -  Bug in Cube tool when a galaxy loaded from db does not have NSA info;
@@ -618,13 +742,13 @@ Fixed
 --------
 
 Changed
-~~~~~~~
+^^^^^^^
 
 -  Full refactoring of Marvin 1.0
 -  Refactored web
 
 Added
-~~~~~
+^^^^^
 
 -  Marvin Tools
 -  Queries (only global properties, for now)
@@ -633,6 +757,6 @@ Added
 -  Many more changes
 
 Fixed
-~~~~~
+^^^^^
 
 -  Issue albireox/marvin#2: Change how matplotlib gets imported.

@@ -3,172 +3,108 @@
 Maps
 ====
 
-:ref:`marvin-tools-maps` is a class to interact with a set of DAP maps/properties for a galaxy.
+`Maps` and `Map` objects form a hierarchy:
 
-.. _marvin-maps_getstart:
-
-Getting Started
----------------
-
-`Maps` behaves in much the same way as a `Cube`.  To initialize a `Maps`, you can specify either a **mangaid**, **plateifu**, or **filename** as input.  Marvin will attempt to open the file locally from a file, a database, or remotely over the API.
-
-::
-
-    from marvin.tools.maps import Maps
-    maps = Maps(mangaid='1-209232')
-
-    print(maps)
-    <Marvin Maps (plateifu='8485-1901', mode='local', data_origin='db', bintype='SPX', template='GAU-MILESHC')>
-
-By default, it will grab the unbinned maps.  You can specify a different binning with the `bintype` keyword.
-::
-
-    maps = Maps(mangaid='1-209232', bintype='HYB10')
-
-    print(maps)
-    <Marvin Maps (plateifu='8485-1901', mode='local', data_origin='db', bintype='HYB10', template='GAU-MILESHC')>
-
-You can quickly grab an entire map by fuzzy indexing or as a class attribute.
-::
-
-    # grab the ha-flux map
-    ha = maps['gflux_ha']
-
-    ha = maps.emline_gflux_ha_6564
-
-    print(ha)
-    <Marvin Map (property='emline_gflux_ha_6564')>
-    [[ 0.  0.  0. ...,  0.  0.  0.]
-     [ 0.  0.  0. ...,  0.  0.  0.]
-     [ 0.  0.  0. ...,  0.  0.  0.]
-     ...,
-     [ 0.  0.  0. ...,  0.  0.  0.]
-     [ 0.  0.  0. ...,  0.  0.  0.]
-     [ 0.  0.  0. ...,  0.  0.  0.]] 1e-17 erg / (cm2 s spaxel)
-
-You can quickly grab a spaxel/bin by slicing the `Maps` like an array.  Slicing a `Maps` returns a `Spaxel` or `Bin`, with a full spectrum.
-::
-
-    # grab the bin of the central spaxel
-    bin_cen = maps[17, 17]
-    print(bin_cen)
-    <Marvin Bin (plateifu=8485-1901, x=17, y=17; x_cen=0, y_cen=0, n_spaxels=1)>
-
-`n_spaxels` tells us there is only one spaxel in this bin. See :ref:`marvin-bin` for more details on the `Bin` class. The binned`flux` in this bin is available as an attribute.  It is represented as a Marvin Spectrum, which is a Quantity.  To quickly plot the flux, use the `plot` method on the `flux`.
-::
-
-    # look at the binned flux
-    bin_cen.flux
-    <Spectrum [ 0.54676276, 0.46566465, 0.4622981 ,...,  0.        ,
-                0.        , 0.        ] 1e-17 erg / (Angstrom cm2 s spaxel)>
-
-    # plot the binned flux
-    bin_cen.flux.plot()
-
-.. image:: ../_static/spec_8485-1901_17-17.png
+* :ref:`marvin-maps`: set of DAP maps for a galaxy (analogous to a DAP MAPS FITS file),
+* :ref:`marvin-map`: an individual map, and
+* :ref:`marvin-enhancedmap`: an individual map modified by map arithmetic.
 
 
-The `Maps` data quality and targeting flags are available as the `quality_flag`, and `target_flags`, respectively.  These are represented as a :ref:`Maskbit <marvin-utils-maskbit>` objects.  A **good** quality `Maps` has an empty (0) bit list.
+`~marvin.tools.maps.Maps` is a class to interact with the set of DAP maps for a galaxy. For a general introduction to Marvin Tools, check out the :ref:`galaxy-tools` section.  Here we will revisit those features and will expand on some specifics of the `~marvin.tools.maps.Maps` class.
 
-::
-
-    # check the quality and bits
-    maps.quality_flag
-    <Maskbit 'MANGA_DAPQUAL' []>
-
-    maps.quality_flag.bits
-    []
-
-    # check the targeting flags
-    maps.target_flags
-    [<Maskbit 'MANGA_TARGET1' ['SECONDARY_v1_1_0', 'SECONDARY_COM2', 'SECONDARY_v1_2_0']>,
-     <Maskbit 'MANGA_TARGET2' []>,
-     <Maskbit 'MANGA_TARGET3' []>]
-
-A single `Map` has a pixel mask, as the `pixmask` attribute.
-::
-
-    # retrieve the maps pixel mask
-    ha.pixmask
-    <Maskbit 'MANGA_DAPPIXMASK' shape=(34, 34)>
-
-The DAPall information is accessible via the `dapall` attribute.  It is a dictionary of the all the parameters from the DAPall file available for this target.  Use `dapall.keys()` to see all of the available parameters.
-::
-
-    # grab the star-formation rate within the IFU field-of-view
-    maps.dapall['sfr_tot']
-    0.132697
-
-    # and the mean surface brightness within 1 effective radius
-    maps.dapall['sb_1re']
-    0.738855
-
-.. _marvin-maps-using:
-
-Using Maps
-----------
-
-.. _marvin-maps-init:
+.. _marvin-maps-initializing:
 
 Initializing a Maps
 ^^^^^^^^^^^^^^^^^^^
 
-A `Maps` can be initialized in several ways, by **filename**, in which case it will always be in `local` mode.
-::
+A `Maps` can be initialized by filename, plateifu, or mangaid.
 
-    maps = Maps(filename='/Users/Brian/Work/Manga/analysis/v2_3_1/2.1.3/SPX-GAU-MILESHC/8485/1901/manga-8485-1901-MAPS-SPX-GAU-MILESHC.fits.gz')
-    <Marvin Maps (plateifu='8485-1901', mode='local', data_origin='file', bintype='SPX', template='GAU-MILESHC')>
+**Filename**:
 
-by **plateifu** or **mangaid**, in which case it attempts to find a local database, otherwise will open it in `remote` mode.
-::
+.. code-block:: python
 
-    maps = Maps(plateifu='8485-1901', bintype='HYB10')
+    >>> maps = Maps(filename='/Users/username/manga/spectro/analysis/v2_4_3/2.2.1/HYB10-GAU-MILESHC/8485/1901/manga-8485-1901-MAPS-HYB10-GAU-MILESHC.fits.gz')
+    >>> maps
+    <Marvin Maps (plateifu='8485-1901', mode='local', data_origin='file', bintype='HYB10', template='GAU-MILESHC')>
+
+Either the full path or the path relative to the current working directory is required.  A `Maps` initialized from a file will always be in `local` mode.
+
+**Plateifu** or **Mangaid**:
+
+.. code-block:: python
+
+    >>> maps = Maps(plateifu='8485-1901')
+    >>> maps
     <Marvin Maps (plateifu='8485-1901', mode='local', data_origin='db', bintype='HYB10', template='GAU-MILESHC')>
 
-    maps = Maps(mangaid='1-209232', bintype='HYB10')
+    >>> maps = Maps(mangaid='1-209232')
+    >>> maps
     <Marvin Maps (plateifu='8485-1901', mode='local', data_origin='db', bintype='HYB10', template='GAU-MILESHC')>
 
-However you can also initialize a `Maps` without the keyword argument and Marvin will attempt to figure out what input you mean.
-::
+Marvin first attempts to find the data in a local database, otherwise will retrieve the data in `remote` mode.
 
-    maps = Maps('8485-1901', bintype='HYB10')
+**Smart Galaxy Lookup**
+
+You can also initialize a `Maps` without the `filename` or a galaxy identifier (`plateifu`/`mangaid`) keyword argument, and Marvin will attempt to parse the input and find the desired galaxy:
+
+.. code-block:: python
+
+    >>> maps = Maps('8485-1901')
+    >>> maps
     <Marvin Maps (plateifu='8485-1901', mode='local', data_origin='db', bintype='HYB10', template='GAU-MILESHC')>
+
+**Bintype**
+
+The default `Maps` bintype is `HYB10`, where the stellar continuum analysis of spectra is Voronoi binned to S/N~10 for the stellar kinematics; however, the emission line measurements are performed on the individual spaxels.  You can specify a different binning scheme with the `bintype` keyword (currently, the only other option is `VOR10`, which does the stellar continuum and emission line analyses on spectra Voronoi binned to S/N~10):
+
+.. code-block:: python
+
+    >>> maps = Maps('8485-1901', bintype='HYB10')
+    >>> maps
+    <Marvin Maps (plateifu='8485-1901', mode='local', data_origin='db', bintype='HYB10', template='GAU-MILESHC')>
+
+**Template**
+
+Currently, the only template available is `GAU-MILESHC`, which is selected by default.
+
 
 .. _marvin-maps-basic:
 
 Basic Attributes
 ^^^^^^^^^^^^^^^^
 
-Like 'Cubes', `Maps` come with some basic attributes attached, e.g. the full header, the WCS info, the bintype and template, and the NSA and DAPall catalog parameters.
-::
+Like `Cubes`, `Maps` come with some basic attributes attached (e.g., the full header, the WCS info, the bintype and template) plus the NSA and DAPall catalog parameters.
+
+.. code-block:: python
 
     # access the header
-    maps.header
+    >>> maps.header
 
     # access the wcs
-    maps.wcs
+    >>> maps.wcs
 
     # the NSA catalog information
-    maps.nsa['z']
+    >>> maps.nsa['z']
     0.0407447
 
     # the DAPall catalog info
-    maps.dapall['sfr_tot']
+    >>> maps.dapall['sfr_tot']
     0.132697
 
-`Maps` also has the DAP data quality, targeting, and pixel masks available as the `quality_flag`, `target_flags`, and `pixmask` attributes, respectively.  These are represented as a :ref:`Maskbit <marvin-utils-maskbit>` objects.
+`Maps` also has the DAP data quality, targeting, and pixel masks available as the `quality_flag`, `target_flags`, and `pixmask` attributes, respectively.  These are represented as :ref:`Maskbit <marvin-utils-maskbit>` objects.
+
 
 .. _marvin-maps-datamodel:
 
-The DataModel
-^^^^^^^^^^^^^
+Maps DataModel
+^^^^^^^^^^^^^^
 
 The :ref:`DAP datamodel <marvin-datamodels>` is attached to `Maps` as the `datamodel` attribute.  The datamodel describes the contents of the MaNGA DAP Maps, for a given release, and contains a list of `Properties` associated with a `Maps`.  This is a subset of the full DAP datamodel only pertaining to Maps.
 
-::
+.. code-block:: python
 
     # display the datamodel for maps properties
-    maps.datamodel
+    >>> maps.datamodel
     [<Property 'spx_skycoo', channel='on_sky_x', release='2.1.3', unit=u'arcsec'>,
      <Property 'spx_skycoo', channel='on_sky_y', release='2.1.3', unit=u'arcsec'>,
      <Property 'spx_ellcoo', channel='elliptical_radius', release='2.1.3', unit=u'arcsec'>,
@@ -186,72 +122,96 @@ The :ref:`DAP datamodel <marvin-datamodels>` is attached to `Maps` as the `datam
      <Property 'specindex_corr', channel='dn4000', release='2.1.3', unit=u''>,
      <Property 'specindex_corr', channel='tiocvd', release='2.1.3', unit=u''>]
 
-Each `Property` in the datamodel describes an available `Map` inside the `Maps` container, and has a channel, units, and a description.  You can fuzzy search through the list to identify maps
-::
+Each `Property` in the datamodel describes an available `Map` inside the `Maps` container, and has a channel, units, and a description.  You can fuzzy search through the list to identify maps:
+
+.. code-block:: python
 
     # find the H-alpha Gaussian flux property
-    maps.datamodel['gflux_ha']
+    >>> maps.datamodel['gflux_ha']
     <Property 'emline_gflux', channel='ha_6564', release='2.1.3', unit=u'1e-17 erg / (cm2 s spaxel)'>
 
-.. _marvin-maps-props:
 
-Properties and the Map
-^^^^^^^^^^^^^^^^^^^^^^
+.. _marvin-maps-access-map:
 
-The `Properties` provide an interface to extract and create an individual `Map`.  You can use fuzzy indexing to retrieve a map.  All properties are also available as class attributes.  Or you can use the old-fashioned `getMap` method.  All three are equivalent.
-::
+Accessing an Individual Map
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    # get the H-alpha Gaussian flux Map
-    ha = maps['gflux_ha']
+The `Property`s provide an interface to extract and create an individual `Map`. You can select an individual `Map` in one of four ways:
 
-    # or
-    ha = maps.emline_gflux_ha_6564
+* exact key slicing,
+* dot syntax,
+* `getMap` method, or
+* fuzzy key slicing.
 
-    # or
-    ha = maps.getMap('emline_gflux_ha_6564')
+.. code-block:: python
 
-    print(ha)
-    <Marvin Map (property='emline_gflux_ha_6564')>
-    [[ 0.  0.  0. ...,  0.  0.  0.]
-     [ 0.  0.  0. ...,  0.  0.  0.]
-     [ 0.  0.  0. ...,  0.  0.  0.]
-     ...,
-     [ 0.  0.  0. ...,  0.  0.  0.]
-     [ 0.  0.  0. ...,  0.  0.  0.]
-     [ 0.  0.  0. ...,  0.  0.  0.]] 1e-17 erg / (cm2 s spaxel)
+    >>> from marvin.tools import Maps
+    >>> maps = Maps(plateifu='8485-1901')
 
-You can plot a map.  See :ref:`marvin-map` for how to use the `Map` object, and the :ref:`marvin-plotting-tutorial` for a guide into plotting.  Details on plotting parameters and defaults can be found :ref:`here<marvin-utils-plot-map>`.
-::
+    # exact key slicing
+    >>> ha = maps['emline_gflux_ha_6564']
 
-    # plot the H-alpha flux map.
-    ha.plot()
+    # dot syntax
+    >>> ha = maps.emline_gflux_ha_6564
 
-.. image:: ../_static/quick_map_plot.png
+    # getMap()
+    >>> ha = maps.getMap('emline_gflux_ha_6564')
+    # equivalently
+    >>> ha = maps.getMap('emline_gflux', channel='ha_6564')
 
-Slicing a map returns a single property
-::
+    # fuzzy key slicing
+    >>> ha = maps['gflux ha']
 
-    # the ha-value in the central bin
-    ha[17,17]
-    <Marvin Map (property='emline_gflux_ha_6564')>
-    30.7445 1e-17 erg / (cm2 s spaxel)
 
-.. _marvin-maps-getbins:
+Fuzzy key slicing works if the input is unambiguously associated with a particular key:
 
-Getting the Binids
-^^^^^^^^^^^^^^^^^^
+.. code-block:: python
 
-For binned `Maps`, you can retrieve a `Map` of the binids directly from the `binid_*` attributes.  For MPL-5, there is only a single `binid`.  As of MPL-6, there are five types of binids, designated as `binid_[name]`.  You can list them from the datamodel
-::
+    # Unambiguous inputs
+    >>> maps['gflux ha']        # == maps['emline_gflux_ha_6564']
+    >>> maps['gvel oiii 5008']  # == maps[emline_gvel_oiii_5008]
+    >>> maps['stellar sig']     # == maps['stellar_sigma']
 
-     maps.datamodel.parent['binid']
-    <MultiChannelProperty 'binid', release='2.1.3', channels=['binned_spectra', 'stellar_continua', 'em_line_moments', 'em_line_models', 'spectral_indices']>
+    # Ambiguous inputs
+    # There are several velocity properties (stellar and emission lines).
+    >>> maps['vel']  # ValueError
+
+    # There are two [O III] lines.
+    >>> maps['gflux oiii']  # ValueError
+
+
+.. _marvin-maps-access-spaxel:
+
+Accessing an Individual Spaxel
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Slicing a `Maps` returns a `Spaxel` object with all of its properties:
+
+.. code-block:: python
+
+    >>> sp = maps[9, 10]
+    >>> print(sp)
+    <Marvin Spaxel (plateifu=8485-1901, x=10, y=9; x_cen=-7, y_cen=-8, loaded=maps)>
+
+
+.. _marvin-maps-binids:
+
+Getting Bin IDs
+^^^^^^^^^^^^^^^
+
+For binned `Maps`, you can retrieve a `Map` of the bin IDs directly from the `binid_*` attributes.  There are five types of bin IDs, designated as `binid_[name]`.  You can list them from the datamodel:
+
+.. code-block:: python
+
+    >>> maps.datamodel.parent['binid']
+    <MultiChannelProperty 'binid', release='2.2.1', channels=['binned_spectra', 'stellar_continua', 'em_line_moments', 'em_line_models', 'spectral_indices']>
 
 They are available as attributes.
-::
+
+.. code-block:: python
 
     # get a Map of the binned_spectra binids
-    maps.binid_binned_spectra
+    >>> maps.binid_binned_spectra
     <Marvin Map (property='binid_binned_spectra')>
     [[-1. -1. -1. ..., -1. -1. -1.]
      [-1. -1. -1. ..., -1. -1. -1.]
@@ -261,71 +221,43 @@ They are available as attributes.
      [-1. -1. -1. ..., -1. -1. -1.]
      [-1. -1. -1. ..., -1. -1. -1.]]
 
-You can also retrieve a 2-d array of the binids using the `get_binid` method.  For MPL-5, `get_binid` returns the binids from the **BINID** extension in the DAP files, while for MPL-6, by default, `get_binid` will return the binids for the `binned_spectra` channel of **BINID**.
-::
+You can also retrieve a 2-d array of the bin IDs using the `get_binid` method.  By default, `get_binid` will return the bin IDs for the `binned_spectra` channel of **BINID**.
+
+.. code-block:: python
 
     # get the default binids
-    maps.get_binid()
-    array([[-1, -1, -1, ..., -1, -1, -1],
-           [-1, -1, -1, ..., -1, -1, -1],
-           [-1, -1, -1, ..., -1, -1, -1],
-           ...,
-           [-1, -1, -1, ..., -1, -1, -1],
-           [-1, -1, -1, ..., -1, -1, -1],
-           [-1, -1, -1, ..., -1, -1, -1]])
+    >>> maps.get_binid()
+    <Marvin Map (property='binid_binned_spectra')>
+    [[-1. -1. -1. ... -1. -1. -1.]
+     [-1. -1. -1. ... -1. -1. -1.]
+     [-1. -1. -1. ... -1. -1. -1.]
+     ...
+     [-1. -1. -1. ... -1. -1. -1.]
+     [-1. -1. -1. ... -1. -1. -1.]
+     [-1. -1. -1. ... -1. -1. -1.]]
 
-MPL-6 has new cubes using hybrid binning, **HYB10**, with alternate binning schemes.  `get_binid` can retrieve those with the `binid` keyword.
-::
+    # equivalent
+    >>> stvel_binids = maps.get_binid(property=maps.datamodel.stellar_vel)
 
-    # grab the binids for the emline_fit model
-    emline_binids = maps.get_binid(binid=maps.datamodel.binid_binned_spectra)
 
-    print(emline_binids)
-    array([[-1, -1, -1, ..., -1, -1, -1],
-       [-1, -1, -1, ..., -1, -1, -1],
-       [-1, -1, -1, ..., -1, -1, -1],
-       ...,
-       [-1, -1, -1, ..., -1, -1, -1],
-       [-1, -1, -1, ..., -1, -1, -1],
-       [-1, -1, -1, ..., -1, -1, -1]])
+.. _marvin-maps-access-objects:
 
-.. _marvin-maps-extract:
+Accessing Other Marvin Objects for the Same Galaxy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Extracting Spaxels/Bins
-^^^^^^^^^^^^^^^^^^^^^^^
+You can grab the associated DRP `Cube` with `getCube`:
 
-If working with a unbinned `Maps`, slicing and `getSpaxel` will retrieve and return a :ref:`Spaxel <marvin-tools-spaxel>` object, and behaves exactly the same as a Marvin :ref:`Cube <marvin-cube-extract>`.  For binned objects, it's exactly like a Marvin :ref:`ModelCube<marvin-modelcube-extract>`.  Slicing and extracting returns a :ref:`marvin-bin` object instead, behaves exactly the same as `Spaxel`, except it now contains a list of spaxels belonging to that bin.
+.. code-block:: python
 
-.. _marvin-maps-access:
+    >>> maps.getCube()
+    <Marvin Cube (plateifu='8485-1901', mode='remote', data_origin='api')>
 
-Accessing Related Objects
-^^^^^^^^^^^^^^^^^^^^^^^^^
+or the `Modelcube` object using the `getModelCube` method:
 
-You can grab the associated DRP `Cube` with `getCube`.
-::
+.. code-block:: python
 
-    maps.getCube()
-    <Marvin Cube (plateifu='8485-1901', mode='local', data_origin='db')>
-
-or the `Modelcube` object using the `getModelcube` method.
-::
-
-    maps.getModelCube()
-    <Marvin ModelCube (plateifu='8485-1901', mode='local', data_origin='db', bintype='HYB10', template='GAU-MILESHC')>
-
-From a binned `Maps`, you can go back to the unbinned version with the `get_unbinned` method:
-::
-
-    print(maps)
-    <Marvin Maps (plateifu='8485-1901', mode='local', data_origin='db', bintype='HYB10', template='GAU-MILESHC')>
-
-    maps.get_unbinned()
-    <Marvin Maps (plateifu='8485-1901', mode='local', data_origin='db', bintype='SPX', template='GAU-MILESHC')>
-
-You can create a :ref:`BPT<marvin-bpt>` diagram.
-::
-
-    maps.get_bpt()
+    >>> maps.getModelCube()
+    <Marvin ModelCube (plateifu='8485-1901', mode='remote', data_origin='api', bintype='HYB10', template='GAU-MILESHC')>
 
 
 .. _marvin-maps-save:
@@ -333,23 +265,32 @@ You can create a :ref:`BPT<marvin-bpt>` diagram.
 Saving and Restoring
 ^^^^^^^^^^^^^^^^^^^^
 
-You can save a `Maps` locally as a Python pickle object, using the `save` method.
-::
+You can save a `Maps` locally as a Python pickle object, using the `save` method:
 
-    maps.save('mymaps.mpf')
+.. code-block:: python
 
-as well as restore a Maps pickle object using the `restore` class method
-::
+    >>> maps.save('mymaps.mpf')
 
-    from marvin.tools.maps import Maps
+Your saved `Maps` can be restored as a `Maps` object using the `restore` class method:
 
-    maps = Maps.restore('mymaps.mpf')
+.. code-block:: python
+
+    >>> from marvin.tools import Maps
+    >>> maps = Maps.restore('mymaps.mpf')
 
 
-.. _marvin-maps-api:
+.. _marvin-maps-bpt:
+
+BPT Diagram
+^^^^^^^^^^^
+You can create a :ref:`BPT<marvin-bpt>` diagram:
+
+.. code-block:: python
+
+    >>> masks, fig, axes = maps.get_bpt()
 
 Reference/API
--------------
+^^^^^^^^^^^^^
 
 .. rubric:: Class Inheritance Diagram
 

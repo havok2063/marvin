@@ -5,10 +5,10 @@
 #
 # @Author: Brett Andrews <andrews>
 # @Date:   2017-10-06 10:10:00
-# @Last modified by:   andrews
-# @Last modified time: 2018-02-22 16:02:75
+# @Last modified by: José Sánchez-Gallego (gallegoj@uw.edu)
+# @Last modified time: 2018-11-26 11:51:50
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 
@@ -16,7 +16,11 @@ import numpy as np
 import pandas as pd
 
 import marvin
-from marvin.utils.general.yanny import yanny
+from marvin.extern.yanny import yanny
+
+
+# Stores the maskbits yanny file structure so that we don't need to open it more than once.
+_maskbits_from_yanny = None
 
 
 def _read_maskbit_schemas():
@@ -25,9 +29,14 @@ def _read_maskbit_schemas():
     Returns:
         Record Array: all bits for all schemas.
     """
-    path_maskbits = os.path.join(os.path.dirname(marvin.__file__), 'data', 'sdssMaskbits.par')
-    sdss_maskbits = yanny(path_maskbits, np=True)
-    return sdss_maskbits['MASKBITS']
+
+    global _maskbits_from_yanny
+
+    if _maskbits_from_yanny is None:
+        path_maskbits = os.path.join(os.path.dirname(marvin.__file__), 'data', 'sdssMaskbits.par')
+        _maskbits_from_yanny = yanny(path_maskbits, np=True)
+
+    return _maskbits_from_yanny['MASKBITS']
 
 
 def get_available_maskbits():
@@ -314,7 +323,12 @@ class Maskbit(object):
         if isinstance(labels, str):
             labels = [labels]
 
-        bit_values = [self.schema.bit[self.schema.label == label].values[0] for label in labels]
+        bit_values = []
+        for label in labels:
+            bit = self.schema.bit[self.schema.label == label]
+            if not bit.empty:
+                bit_values.append(bit.values[0])
+
         return np.sum([2**value for value in bit_values])
 
     def labels_to_bits(self, labels):
@@ -371,8 +385,21 @@ class Maskbit(object):
                    ...,
                    [ True,  True,  True, ...,  True,  True,  True]], dtype=bool)
         """
+
         assert dtype in [int, bool], '``dtype`` must be either ``int`` or ``bool``.'
+
+        if isinstance(labels, str):
+            labels = [labels]
+
+        schema_labels = self.schema.label.tolist()
+        for label in labels:
+            if label not in schema_labels:
+                raise ValueError('label {0!r} not found in the maskbit schema.'.format(label))
 
         bits = self.labels_to_bits(labels)
         mask = mask if mask is not None else self.mask
+
+        if len(bits) == 0:
+            return np.zeros(mask.shape, dtype=np.int)
+
         return np.sum([mask & 2**bit for bit in bits], axis=0).astype(dtype)

@@ -1,39 +1,40 @@
 #!/usr/bin/env python
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 #
-# @Author: José Sánchez-Gallego
-# @Date: Nov 1, 2017
+# @Author: Brian Cherinka, José Sánchez-Gallego, and Brett Andrews
+# @Date: 2017-11-01
 # @Filename: modelcube.py
-# @License: BSD 3-Clause
-# @Copyright: José Sánchez-Gallego
+# @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
+#
+# @Last modified by: José Sánchez-Gallego (gallegoj@uw.edu)
+# @Last modified time: 2018-11-14 11:48:16
 
 
-from __future__ import division
-from __future__ import print_function
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 import distutils
 import warnings
 
+import numpy as np
+from pkg_resources import parse_version
 from astropy.io import fits
 from astropy.wcs import WCS
-import numpy as np
 
 import marvin
 import marvin.core.exceptions
+import marvin.tools.maps
 import marvin.tools.spaxel
 import marvin.utils.general.general
-import marvin.tools.maps
-
-from marvin.core.core import MarvinToolsClass, NSAMixIn, DAPallMixIn
 from marvin.core.exceptions import MarvinError
-from marvin.tools.quantities import DataCube, Spectrum
-from marvin.utils.datamodel.dap import datamodel, Model
-from marvin.utils.general import FuzzyDict
-from marvin.utils.general.maskbit import get_manga_target
+from marvin.tools.quantities import DataCube, Map, Spectrum
+from marvin.utils.datamodel.dap import Model, datamodel
+from marvin.utils.general import FuzzyDict, gunzip, check_versions
+
+from .core import MarvinToolsClass
+from .mixins import DAPallMixIn, GetApertureMixIn, NSAMixIn
 
 
-class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
+class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn, GetApertureMixIn):
     """A class to interface with MaNGA DAP model cubes.
 
     This class represents a DAP model cube, initialised either from a file,
@@ -76,6 +77,7 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
         self.bintype = bintype
         self.template = template
         self.datamodel = None
+
         self._bitmasks = None
 
         MarvinToolsClass.__init__(self, input=input, filename=filename,
@@ -177,7 +179,8 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
             assert isinstance(self.data, fits.HDUList), 'data is not an HDUList object'
         else:
             try:
-                self.data = fits.open(self.filename)
+                with gunzip(self.filename) as gg:
+                    self.data = fits.open(gg.name)
             except IOError as err:
                 raise IOError('filename {0} cannot be found: {1}'.format(self.filename, err))
 
@@ -199,7 +202,7 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
         file_ver = marvin.config.lookUpRelease(file_drpver)
         assert file_ver is not None, 'cannot find file version.'
 
-        if file_ver != self._release:
+        if file_drpver != self._drpver:
             warnings.warn('mismatch between file version={0} and object release={1}. '
                           'Setting object release to {0}'.format(file_ver, self._release),
                           marvin.core.exceptions.MarvinUserWarning)
@@ -210,7 +213,11 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
         # Updates datamodel, bintype, and template with the versions from the header.
         self.datamodel = datamodel[self._dapver].models
         self.bintype = self.datamodel.parent.get_bintype(self.header['BINKEY'].strip().upper())
-        self.template = self.datamodel.parent.get_template(self.header['SCKEY'].strip().upper())
+        if check_versions(self._dapver, datamodel['MPL-8'].release):
+            tempkey = self.header['DAPTYPE'].split('-', 1)[-1]
+        else:
+            tempkey = self.header['SCKEY']
+        self.template = self.datamodel.parent.get_template(tempkey.strip().upper())
 
     def _load_modelcube_from_db(self):
         """Initialises a model cube from the DB."""
@@ -229,8 +236,9 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
             dm = datamodel[self.release]
             if dm.db_only:
                 if self.bintype not in dm.db_only:
-                    raise marvin.core.exceptions.MarvinError('Specified bintype {0} is not available in the DB'.format(self.bintype.name))
-
+                    raise marvin.core.exceptions.MarvinError(
+                        'Specified bintype {0} is not '
+                        'available in the DB'.format(self.bintype.name))
 
             if self.data:
                 assert isinstance(self.data, dapdb.ModelCube), \
@@ -300,42 +308,8 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
         self.plateifu = str(self.header['PLATEIFU'].strip())
         self.mangaid = str(self.header['MANGAID'].strip())
 
-    @property
-    def manga_target1(self):
-        """Return MANGA_TARGET1 flag."""
-        return get_manga_target('1', self._bitmasks, self.header)
-
-    @property
-    def manga_target2(self):
-        """Return MANGA_TARGET2 flag."""
-        return get_manga_target('2', self._bitmasks, self.header)
-
-    @property
-    def manga_target3(self):
-        """Return MANGA_TARGET3 flag."""
-        return get_manga_target('3', self._bitmasks, self.header)
-
-    @property
-    def target_flags(self):
-        """Bundle MaNGA targeting flags."""
-        return [self.manga_target1, self.manga_target2, self.manga_target3]
-
-    @property
-    def quality_flag(self):
-        """Return ModelCube DAPQUAL flag."""
-        dapqual = self._bitmasks['MANGA_DAPQUAL']
-        dapqual.mask = int(self.header['DAPQUAL'])
-        return dapqual
-
-    @property
-    def pixmask(self):
-        """Return the DAPSPECMASK flag."""
-        pixmask = self._bitmasks['MANGA_DAPSPECMASK']
-        pixmask.mask = getattr(self.binned_flux, 'mask', None)
-        return pixmask
-
     def getSpaxel(self, x=None, y=None, ra=None, dec=None,
-                  drp=True, properties=True, **kwargs):
+                  cube=False, maps=False, **kwargs):
         """Returns the :class:`~marvin.tools.spaxel.Spaxel` matching certain coordinates.
 
         The coordinates of the spaxel to return can be input as ``x, y`` pixels
@@ -362,12 +336,12 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
                 spatial dimensions of the cube, or ``'lower'`` for the
                 lower-left corner. This keyword is ignored if ``ra`` and
                 ``dec`` are defined.
-            drpa (bool):
+            cube (bool):
                 If ``True``, the |spaxel| will be initialised with the
-                corresponding DRP data.
-            properties (bool):
+                corresponding DRP cube data.
+            maps (bool):
                 If ``True``, the |spaxel| will be initialised with the
-                corresponding DAP properties for this spaxel.
+                corresponding DAP Maps properties for this spaxel.
 
         Returns:
             spaxels (list):
@@ -379,9 +353,15 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
 
         """
 
+        for old_param in ['drp', 'properties']:
+            if old_param in kwargs:
+                raise marvin.core.exceptions.MarvinDeprecationError(
+                    'the {0} parameter has been deprecated. '
+                    'Use cube or maps.'.format(old_param))
+
         return marvin.utils.general.general.getSpaxel(
             x=x, y=y, ra=ra, dec=dec,
-            cube=drp, maps=properties, modelcube=self, **kwargs)
+            cube=cube, maps=maps, modelcube=self, **kwargs)
 
     def _get_extension_data(self, name, ext=None):
         """Returns the data from an extension."""
@@ -423,7 +403,7 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
 
         return ext_data
 
-    def _get_spaxel_quantities(self, x, y):
+    def _get_spaxel_quantities(self, x, y, spaxel=None):
         """Returns a dictionary of spaxel quantities."""
 
         modelcube_quantities = FuzzyDict({})
@@ -464,11 +444,14 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
 
                         data[key] = np.array(getattr(_db_row, colname))
 
-                modelcube_quantities[dm.name] = Spectrum(data['value'],
-                                                         ivar=data['ivar'],
-                                                         mask=data['mask'],
-                                                         wavelength=self._wavelength,
-                                                         unit=dm.unit)
+                quantity = Spectrum(data['value'], ivar=data['ivar'], mask=data['mask'],
+                                    wavelength=self._wavelength, unit=dm.unit,
+                                    pixmask_flag=dm.pixmask_flag)
+
+                if spaxel:
+                    quantity._init_bin(spaxel=spaxel, parent=self, datamodel=dm)
+
+                modelcube_quantities[dm.full()] = quantity
 
         if self.data_origin == 'api':
 
@@ -489,16 +472,33 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
 
             for dm in self.datamodel:
 
-                modelcube_quantities[dm.name] = Spectrum(data[dm.name]['value'],
-                                                         ivar=data[dm.name]['ivar'],
-                                                         mask=data[dm.name]['mask'],
-                                                         wavelength=data['wavelength'],
-                                                         unit=dm.unit)
+                quantity = Spectrum(data[dm.name]['value'], ivar=data[dm.name]['ivar'],
+                                    mask=data[dm.name]['mask'], wavelength=data['wavelength'],
+                                    unit=dm.unit, pixmask_flag=dm.pixmask_flag)
+
+                if spaxel:
+                    quantity._init_bin(spaxel=spaxel, parent=self, datamodel=dm)
+
+                modelcube_quantities[dm.full()] = quantity
 
         return modelcube_quantities
 
     def get_binid(self, model=None):
-        """Returns the 2D array for the binid map associated with ``model``."""
+        """Returns the binid map associated with a model.
+
+        Parameters
+        ----------
+        model : `datamodel.Model` or None
+            The model for which the associated binid map will be returned.
+            If ``binid=None``, the default binid is returned.
+
+        Returns
+        -------
+        binid : `Map`
+            A `Map` with the binid associated with ``model`` or the default
+            binid.
+
+        """
 
         assert model is None or isinstance(model, Model), 'invalid model type.'
 
@@ -516,9 +516,9 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
         if self.data_origin == 'file':
 
             if binid_prop.channel is None:
-                return self.data[binid_prop.name].data[:, :]
+                binid_map_data = self.data[binid_prop.name].data[:, :]
             else:
-                return self.data[binid_prop.name].data[binid_prop.channel.idx, :, :]
+                binid_map_data = self.data[binid_prop.name].data[binid_prop.channel.idx, :, :]
 
         elif self.data_origin == 'db':
 
@@ -533,7 +533,7 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
             nx = ny = int(np.sqrt(len(binid_list)))
             binid_array = np.array(binid_list)
 
-            return binid_array.transpose().reshape((ny, nx)).transpose(1, 0)
+            binid_map_data = binid_array.transpose().reshape((ny, nx)).transpose(1, 0)
 
         elif self.data_origin == 'api':
 
@@ -556,7 +556,12 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
                 raise MarvinError('found a problem while getting the binid from API: {}'
                                   .format(str(response.results['error'])))
 
-            return np.array(response.getData()['binid'])
+            binid_map_data = np.array(response.getData()['binid'])
+
+        binid_map = Map(binid_map_data, unit=binid_prop.unit)
+        binid_map._datamodel = binid_prop
+
+        return binid_map
 
     @property
     def binned_flux(self):
@@ -574,7 +579,8 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
                         mask=binned_flux_mask,
                         redcorr=self._redcorr,
                         binid=self.get_binid(model),
-                        unit=model.unit)
+                        unit=model.unit,
+                        pixmask_flag=model.pixmask_flag)
 
     @property
     def full_fit(self):
@@ -591,7 +597,8 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
                         mask=model_mask,
                         redcorr=self._redcorr,
                         binid=self.get_binid(model),
-                        unit=model.unit)
+                        unit=model.unit,
+                        pixmask_flag=model.pixmask_flag)
 
     @property
     def emline_fit(self):
@@ -600,7 +607,10 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
         model = self.datamodel['emline_fit']
 
         emline_array = self._get_extension_data('emline_fit')
-        emline_mask = self._get_extension_data('emline_fit', 'mask')
+        if model.has_mask():
+            emline_mask = self._get_extension_data('emline_fit', 'mask')
+        else:
+            emline_mask = None
 
         return DataCube(emline_array,
                         np.array(self._wavelength),
@@ -608,27 +618,34 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn):
                         mask=emline_mask,
                         redcorr=self._redcorr,
                         binid=self.get_binid(model),
-                        unit=model.unit)
+                        unit=model.unit,
+                        pixmask_flag=model.pixmask_flag)
 
     @property
     def stellarcont_fit(self):
         """Returns the stellar continuum fit."""
 
-        array = (self._get_extension_data('full_fit') -
-                 self._get_extension_data('emline_fit') -
-                 self._get_extension_data('emline_base_fit'))
+        isMPL8 = check_versions(self._dapver, datamodel['MPL-8'].release)
 
-        model = self.datamodel['full_fit']
-
-        stellarcont_mask = self._get_extension_data('flux', 'mask')
+        if isMPL8:
+            array = self._get_extension_data('stellar_fit')
+            model = self.datamodel['stellar_fit']
+            mask = self._get_extension_data('stellar_fit', 'mask')
+        else:
+            array = (self._get_extension_data('full_fit') -
+                     self._get_extension_data('emline_fit') -
+                     self._get_extension_data('emline_base_fit'))
+            model = self.datamodel['full_fit']
+            mask = self._get_extension_data('flux', 'mask')
 
         return DataCube(array,
                         np.array(self._wavelength),
                         ivar=None,
-                        mask=stellarcont_mask,
+                        mask=mask,
                         redcorr=self._redcorr,
                         binid=self.get_binid(model),
-                        unit=model.unit)
+                        unit=model.unit,
+                        pixmask_flag=model.pixmask_flag)
 
     def getCube(self):
         """Returns the associated `~marvin.tools.cube.Cube`."""

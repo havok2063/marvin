@@ -1,21 +1,22 @@
 #!/usr/bin/env python
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 #
-# @Author: José Sánchez-Gallego
-# @Date: Aug 15, 2017
+# @Author: Brian Cherinka, José Sánchez-Gallego, and Brett Andrews
+# @Date: 2017-08-15
 # @Filename: test_modelcube.py
-# @License: BSD 3-Clause
-# @Copyright: José Sánchez-Gallego
+# @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
+#
+# @Last modified by: José Sánchez-Gallego (gallegoj@uw.edu)
+# @Last modified time: 2018-11-08 15:08:26
 
 
-from __future__ import division
-from __future__ import print_function
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
-import six
 
 import pytest
+import six
+import astropy.units as u
 from astropy.io import fits
 from astropy.wcs import WCS
 
@@ -98,9 +99,29 @@ class TestModelCube(object):
         shape = tuple([4563] + galaxy.shape)
         assert model_cube.binned_flux.shape == shape
 
+    @marvin_test_if(mark='include', galaxy={'plateifu': '8485-1901'})
+    def test_get_flux_remote(self, galaxy):
+        model_cube = ModelCube(plateifu=galaxy.plateifu, mode='remote')
+        shape = tuple([4563] + galaxy.shape)
+        assert model_cube.binned_flux.shape == shape
+
     def test_get_cube_file(self, galaxy):
         model_cube = ModelCube(filename=galaxy.modelpath)
         assert isinstance(model_cube.getCube(), Cube)
+
+    def test_get_cube_units(self, galaxy):
+        model_cube = ModelCube(filename=galaxy.modelpath)
+        unit = '1E-17 erg/s/cm^2/ang/spaxel'
+        fileunit = model_cube.data['EMLINE'].header['BUNIT']
+        assert unit == fileunit
+
+        unit = fileunit.replace('ang', 'angstrom').split('/spaxel')[0]
+        spaxel = u.Unit('spaxel', represents=u.pixel,
+                        doc='A spectral pixel', parse_strict='silent')
+        newunit = (u.Unit(unit) / spaxel)
+        #unit = '1e-17 erg / (Angstrom cm2 s spaxel)'
+        dmunit = model_cube.emline_fit.unit
+        assert newunit == dmunit
 
     def test_get_maps_api(self, galaxy):
         model_cube = ModelCube(plateifu=galaxy.plateifu, mode='remote')
@@ -112,7 +133,7 @@ class TestModelCube(object):
             pytest.skip('only running this test for MPL6')
 
         with pytest.raises(MarvinError) as cm:
-            maps = ModelCube(plateifu=galaxy.plateifu, bintype='ALL', release=galaxy.release)
+            ModelCube(plateifu=galaxy.plateifu, bintype='ALL', release=galaxy.release)
 
         assert 'Specified bintype ALL is not available in the DB' in str(cm.value)
 
@@ -207,8 +228,7 @@ class TestMaskbit(object):
                              ['manga_target1',
                               'manga_target2',
                               'manga_target3',
-                              'target_flags',
-                              'pixmask'])
+                              'target_flags'])
     def test_flag(self, flag, galaxy):
         modelcube = ModelCube(plateifu=galaxy.plateifu, bintype=galaxy.bintype)
         assert getattr(modelcube, flag, None) is not None

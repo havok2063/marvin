@@ -35,14 +35,14 @@ Restore Default Style
 Quick Map Plot
 --------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
-    from marvin.tools.maps import Maps
-    maps = Maps(plateifu='8485-1901')
-    ha = maps['emline_gflux_ha_6564']
+    from marvin.tools import Maps
+    maps = Maps('8485-1901')
+    ha = maps.emline_gflux_ha_6564
     ha.plot()
-
-.. image:: ../_static/quick_map_plot.png
 
 
 .. _marvin-plotting-quick-spectrum:
@@ -50,14 +50,14 @@ Quick Map Plot
 Quick Spectrum Plot
 -------------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
-    from marvin.tools.maps import Maps
-    maps = Maps(plateifu='8485-1901')
-    spax = maps[17, 17]
+    from marvin.tools import Cube
+    cube = Cube('8485-1901')
+    spax = cube[17, 17]
     spax.flux.plot()
-
-.. image:: ../_static/quick_spectrum_plot.png
 
 
 .. _marvin-plotting-quick-model-fit:
@@ -65,18 +65,23 @@ Quick Spectrum Plot
 Quick Model Fit Plot
 --------------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
-    from marvin.tools.maps import Maps
-    maps = Maps(plateifu='8485-1901')
-    # must use Maps.getSpaxel() to get modelcube
-    # (the bracket slicing of Maps does not return the modelcube)
-    spax = maps.getSpaxel(x=17, y=17, xyorig='lower', model=True)
-    ax = spax.flux.plot()
-    ax.plot(spax.full_fit.wavelength, spax.full_fit.value)
-    ax.legend(list(ax.get_lines()), ['observed', 'model'])
+    from marvin.tools import Maps
+    maps = Maps('8485-1901')
 
-.. image:: ../_static/quick_model_plot.png
+    # must use Maps.getSpaxel() to get cube and modelcube
+    spax = maps.getSpaxel(x=17, y=17, xyorig='lower', cube=True, modelcube=True)
+
+    # mask out pixels lacking model fit
+    no_fit = ~spax.full_fit.masked.mask
+
+    # extra arguments to plot are passed to the matplotlib routine
+    ax = spax.flux.plot(label='observed')
+    ax.plot(spax.full_fit.wavelength[no_fit], spax.full_fit.value[no_fit], label='model')
+    ax.legend()
 
 
 .. _marvin-plotting-quick-image:
@@ -84,16 +89,14 @@ Quick Model Fit Plot
 Quick Image Plot
 ----------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
     import matplotlib.pyplot as plt
-    from marvin.utils.general.images import showImage
-    image = showImage(plateifu='8553-12702', show_image=False)
-    fig, ax = plt.subplots()
-    ax.imshow(image)
-    ax.axis('off')
-
-.. image:: ../_static/image_8553-12702.png
+    from marvin.tools.image import Image
+    image = Image(plateifu='8553-12702')
+    image.plot()
 
 
 .. _marvin-plotting-bpt:
@@ -101,13 +104,13 @@ Quick Image Plot
 BPT Plot
 --------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
-    from marvin.tools.maps import Maps
-    maps = Maps(plateifu='8485-1901')
+    from marvin.tools import Maps
+    maps = Maps('8485-1901')
     masks, fig, axes = maps.get_bpt()
-
-.. image:: ../_static/bpt.png
 
 
 .. _marvin-plotting-multipanel-single:
@@ -115,25 +118,31 @@ BPT Plot
 Multi-panel Map Plot (Single Galaxy)
 ------------------------------------
 
-.. code-block:: python
+This code produces the right panel of Figure 1 from the `Marvin paper
+<https://ui.adsabs.harvard.edu/abs/2018arXiv181203833C/abstract>`_.
+
+.. plot::
+    :align: center
+    :include-source: True
 
     import matplotlib.pyplot as plt
-    from marvin.tools.maps import Maps
-    import marvin.utils.plot.map as mapplot
-    plt.style.use('seaborn-darkgrid')  # set matplotlib style sheet
+    import numpy as np
+    from marvin.tools import Maps
 
-    maps = Maps(plateifu='8485-1901')
-    stvel = maps['stellar_vel']
-    ha = maps['emline_gflux_ha_6564']
-    d4000 = maps['specindex_d4000']
+    maps = Maps('7977-12705')
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
-    for ax, map_ in zip(axes, [stvel, ha, d4000]):
-        mapplot.plot(dapmap=map_, fig=fig, ax=ax)
+    halpha = maps.emline_gflux_ha_6564
+    nii_ha = np.log10(maps.emline_gflux_nii_6585 / halpha)
+    stvel = maps.stellar_vel
+    stsig = maps.stellar_sigma
+    stsig_corr = stsig.inst_sigma_correction()
 
-    fig.tight_layout()
-
-.. image:: ../_static/multipanel.png
+    with plt.style.context('seaborn-darkgrid'):
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(12, 11))
+        halpha.plot(fig=fig, ax=axes[0, 0])
+        nii_ha.plot(fig=fig, ax=axes[0, 1], title="log([NII]6585 / H-alpha)", snr_min=None)
+        stvel.plot(fig=fig, ax=axes[1, 0])
+        stsig_corr.plot(fig=fig, ax=axes[1, 1])
 
 
 .. _marvin-plotting-multipanel-multiple:
@@ -141,27 +150,27 @@ Multi-panel Map Plot (Single Galaxy)
 Multi-panel Map Plot (Multiple Galaxies)
 ----------------------------------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
     import matplotlib.pyplot as plt
-    from marvin.tools.maps import Maps
+    from marvin.tools import Maps
     import marvin.utils.plot.map as mapplot
-    plt.style.use('seaborn-darkgrid')  # set matplotlib style sheet
 
-    plateifus = ['8485-1901', '8485-1902', '8485-12701']
+    plateifus = ['8485-1901', '7443-12701']
     mapnames = ['stellar_vel', 'stellar_sigma']
 
-    rows = len(plateifus)
-    cols = len(mapnames)
-    fig, axes = plt.subplots(rows, cols, figsize=(8, 12))
-    for row, plateifu in zip(axes, plateifus):
-        maps = Maps(plateifu=plateifu)
-        for ax, mapname in zip(row, mapnames):
-            mapplot.plot(dapmap=maps[mapname], fig=fig, ax=ax, title=' '.join((plateifu, mapname)))
+    with plt.style.context('seaborn-darkgrid'):
+        rows = len(plateifus)
+        cols = len(mapnames)
+        fig, axes = plt.subplots(rows, cols, figsize=(8, 6))
+        for row, plateifu in zip(axes, plateifus):
+            maps = Maps(plateifu=plateifu)
+            for ax, mapname in zip(row, mapnames):
+                mapplot.plot(dapmap=maps[mapname], fig=fig, ax=ax, title=' '.join((plateifu, mapname)))
 
-    fig.tight_layout()
-
-.. image:: ../_static/multipanel_kinematics.png
+        fig.tight_layout()
 
 
 .. _marvin-plotting-zoom-in:
@@ -169,17 +178,16 @@ Multi-panel Map Plot (Multiple Galaxies)
 Zoom-in Map Plot
 ----------------
 
+.. plot::
+    :align: center
+    :include-source: True
 
-.. code-block:: python
-
-    from marvin.tools.maps import Maps
-    maps = Maps(plateifu='8485-1901')
-    ha = maps['emline_gflux_ha_6564']
+    from marvin.tools import Maps
+    maps = Maps('8485-1901')
+    ha = maps.emline_gflux_ha_6564
 
     fig, ax = ha.plot()
     ax.axis([13, 21, 13, 21])
-
-.. image:: ../_static/zoom_in.png
 
 
 .. _marvin-plotting-custom-map-cbrange:
@@ -189,9 +197,12 @@ Custom Map Colorbar Range Options
 
 .. code-block:: python
 
-    from marvin.tools.maps import Maps
-    maps = Maps(plateifu='8485-1901')
-    ha = maps['emline_gflux_ha_6564']
+    :align: center
+    :include-source: True
+
+    from marvin.tools import Maps
+    maps = Maps('8485-1901')
+    ha = maps.emline_gflux_ha_6564
 
     fig, ax = ha.plot(percentile_clip=(1, 99))
     fig, ax = ha.plot(sigma_clip=2)
@@ -205,16 +216,18 @@ Custom Map Colorbar Range Options
 Multi-panel Map Plot with Matching Colorbar Ranges
 --------------------------------------------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
     import numpy as np
     import matplotlib.pyplot as plt
-    from marvin.tools.maps import Maps
+    from marvin.tools import Maps
     import marvin.utils.plot.map as mapplot
 
-    maps = Maps(plateifu='8485-1901')
-    havel = maps['emline_gvel_ha_6564']
-    stvel = maps['stellar_vel']
+    maps = Maps('8485-1901')
+    havel = maps.emline_gvel_ha_6564
+    stvel = maps.stellar_vel
     vel_maps = [havel, stvel]
 
     cbranges = [vel_map.plot(return_cbrange=True) for vel_map in vel_maps]
@@ -227,24 +240,22 @@ Multi-panel Map Plot with Matching Colorbar Ranges
 
     fig.tight_layout()
 
-.. image:: ../_static/multipanel_matching_cbrange.png
-
 
 .. _marvin-plotting-custom-map-snr-min:
 
 Custom Minimum Signal-to-Noise Ratio
 ------------------------------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
-    from marvin.tools.maps import Maps
-    maps = Maps(plateifu='8485-1901')
-    ha = maps['emline_gflux_ha_6564']
+    from marvin.tools import Maps
+    maps = Maps('8485-1901')
+    ha = maps.emline_gflux_ha_6564
 
     # Default is 1 except for velocities, which default to 0.
     fig, ax = ha.plot(snr_min=10)
-
-.. image:: ../_static/custom_snr_min.png
 
 
 .. _marvin-plotting-custom-map-hatch:
@@ -252,11 +263,13 @@ Custom Minimum Signal-to-Noise Ratio
 Custom No Usable IFU Data Region
 --------------------------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
-    from marvin.tools.maps import Maps
-    maps = Maps(plateifu='8485-1901')
-    ha = maps['emline_gflux_ha_6564']
+    from marvin.tools import Maps
+    maps = Maps('8485-1901')
+    ha = maps.emline_gflux_ha_6564
 
     # Defaults:
     # gray background (facecolor=''#A8A8A8'),
@@ -268,7 +281,6 @@ Custom No Usable IFU Data Region
                                  'edgecolor': 'c',
                                  'hatch': 'xx'})
 
-.. image:: ../_static/custom_hatch.png
 
 
 .. _marvin-plotting-custom-map-axes:
@@ -276,20 +288,20 @@ Custom No Usable IFU Data Region
 Custom Axis and Colorbar Locations for Map Plot
 -----------------------------------------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
     import matplotlib.pyplot as plt
-    from marvin.tools.maps import Maps
-    plt.style.use('seaborn-darkgrid')  # set matplotlib style sheet
+    from marvin.tools import Maps
 
-    maps = Maps(plateifu='8485-1901')
-    ha = maps['emline_gflux_ha_6564']
+    maps = Maps('8485-1901')
+    ha = maps.emline_gflux_ha_6564
 
     fig = plt.figure()
     ax = fig.add_axes([0.12, 0.1, 2 / 3., 5 / 6.])
     fig, ax = ha.plot(fig=fig, ax=ax, cb_kws={'axloc': [0.8, 0.1, 0.03, 5 / 6.]})
 
-.. image:: ../_static/custom_axes.png
 
 
 .. _marvin-plotting-custom-spectrum:
@@ -297,14 +309,16 @@ Custom Axis and Colorbar Locations for Map Plot
 Custom Spectrum and Model Fit
 -----------------------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
     import matplotlib.pyplot as plt
-    from marvin.tools.maps import Maps
-    plt.style.use('seaborn-darkgrid')  # set matplotlib style sheet
+    from marvin.tools import Maps
+    plt.style.use('seaborn-darkgrid')
 
-    maps = Maps(mangaid='1-209232')
-    spax = maps.getSpaxel(x=0, y=0, xyorig='center', model=True)
+    maps = Maps('1-209232')
+    spax = maps.getSpaxel(x=0, y=0, xyorig='center', cube=True, modelcube=True)
 
     fig, ax = plt.subplots()
 
@@ -318,20 +332,19 @@ Custom Spectrum and Model Fit
     ax.set_ylabel('flux [{}]'.format(spax.flux.unit.to_string('latex')))
 
 
-.. image:: ../_static/spec_8485-1901.png
-
-
 .. _marvin-plotting-map-starforming:
 
 Plot H\ :math:`\alpha` Map of Star-forming Spaxels
 --------------------------------------------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
     import numpy as np
-    from marvin.tools.maps import Maps
-    maps = Maps(plateifu='8485-1901')
-    ha = maps['emline_gflux_ha_6564']
+    from marvin.tools import Maps
+    maps = Maps('8485-1901')
+    ha = maps.emline_gflux_ha_6564
     masks = maps.get_bpt(show_plot=False, return_figure=False)
 
     # Create a bitmask for non-star-forming spaxels by taking the
@@ -344,19 +357,21 @@ Plot H\ :math:`\alpha` Map of Star-forming Spaxels
 
     ha.plot(mask=mask)
 
-.. image:: ../_static/map_bpt_mask.png
-
 
 .. _marvin-plotting-niiha-map-starforming:
 
 Plot [NII]/H\ :math:`\alpha` Flux Ratio Map of Star-forming Spaxels
 -------------------------------------------------------------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
-    from marvin.tools.maps import Maps
-    maps = Maps(plateifu='8485-1901')
-    nii_ha = maps.getMapRatio(property_name='emline_gflux', channel_1='nii_6585', channel_2='ha_6564')
+    from marvin.tools import Maps
+    maps = Maps('8485-1901')
+    ha = maps.emline_gflux_ha_6564
+    nii = maps.emline_gflux_nii_6585
+    nii_ha = nii / ha
 
     # Mask out non-star-forming spaxels
     masks, __, __ = maps.get_bpt(show_plot=False)
@@ -371,24 +386,25 @@ Plot [NII]/H\ :math:`\alpha` Flux Ratio Map of Star-forming Spaxels
 
     nii_ha.plot(mask=mask, cblabel='[NII]6585 / Halpha flux ratio')
 
-.. image:: ../_static/niiha_bpt_mask.png
 
 
 .. _marvin-plotting-qualitative-colorbar:
 
-Qualitative Colorbar (New in version 2.1.4)
--------------------------------------------
+Qualitative Colorbar
+--------------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
     import numpy as np
     from matplotlib import pyplot as plt
     from matplotlib.colors import ListedColormap
-    from marvin.tools.maps import Maps
+    from marvin.tools import Maps
     import marvin.utils.plot.map as mapplot
 
-    maps = Maps(plateifu='8485-1901')
-    ha = maps['emline_gflux_ha_6564']
+    maps = Maps('8485-1901')
+    ha = maps.emline_gflux_ha_6564
 
     # divide data into classes
     ha_class = np.ones(ha.shape, dtype=int)
@@ -397,11 +413,9 @@ Qualitative Colorbar (New in version 2.1.4)
 
     cmap = ListedColormap(['#104e8b', '#5783ad', '#9fb8d0'])
     fig, ax, cb = mapplot.plot(dapmap=ha, value=ha_class, cmap=cmap, cbrange=(0.5, 3.5),
-                               title='', cblabel='', return_cb=True)
+                               title='', cblabel='Class', return_cb=True)
     cb.set_ticks([1, 2, 3])
     cb.set_ticklabels(['I', 'II', 'III'])
-
-.. image:: ../_static/qualitative_cb.png
 
 
 .. _marvin-plotting-custom-map-mask:
@@ -409,13 +423,15 @@ Qualitative Colorbar (New in version 2.1.4)
 Custom Values and Custom Mask
 -----------------------------
 
-.. code-block:: python
+.. plot::
+    :align: center
+    :include-source: True
 
-    from marvin.tools.maps import Maps
+    from marvin.tools import Maps
     import marvin.utils.plot.map as mapplot
 
-    maps = Maps(plateifu='8485-1901')
-    ha = maps['emline_gflux_ha_6564']
+    maps = Maps('8485-1901')
+    ha = maps.emline_gflux_ha_6564
 
     # Mask spaxels without IFU coverage
     # nocov = ha.mask & 2**0
@@ -428,7 +444,5 @@ Custom Values and Custom Mask
     mask = nocov | low_ha
 
     fig, ax = mapplot.plot(dapmap=ha, value=ha.value, mask=mask)
-
-.. image:: ../_static/custom_mask.png
 
 |

@@ -1,58 +1,58 @@
 #!/usr/bin/env python
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 #
-# @Author: José Sánchez-Gallego
-# @Date: Nov 1, 2017
+# @Author: Brian Cherinka, José Sánchez-Gallego, and Brett Andrews
+# @Date: 2017-11-01
 # @Filename: general.py
-# @License: BSD 3-Clause
-# @Copyright: José Sánchez-Gallego
+# @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
+#
+# @Last modified by:   Brian Cherinka
+# @Last modified time: 2018-08-11 23:34:07
 
 
-from __future__ import division
-from __future__ import print_function
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 import collections
+import contextlib
 import inspect
+import os
+import re
 import sys
 import warnings
-import contextlib
-import re
-
-from collections import OrderedDict
 from builtins import range
+from collections import OrderedDict
+from functools import wraps
+from pkg_resources import parse_version
 
-import numpy as np
-
-from scipy.interpolate import griddata
 import matplotlib.pyplot as plt
+import numpy as np
 import PIL
-
-from astropy import table
-from astropy import wcs
+from astropy import table, wcs
 from astropy.units.quantity import Quantity
+from brain.core.exceptions import BrainError
+from flask_jwt_extended import get_jwt_identity
+from scipy.interpolate import griddata
 
 import marvin
-
 from marvin import log
 from marvin.core.exceptions import MarvinError, MarvinUserWarning
-from marvin.utils.datamodel.dap.plotting import get_default_plot_params
+
 
 try:
     from sdss_access import RsyncAccess, AccessError
-except ImportError as e:
+except ImportError:
     RsyncAccess = None
 
 try:
     from sdss_access.path import Path
-except ImportError as e:
+except ImportError:
     Path = None
 
 try:
     import pympler.summary
     import pympler.muppy
     import psutil
-except ImportError as e:
+except ImportError:
     pympler = None
     psutil = None
 
@@ -61,12 +61,29 @@ except ImportError as e:
 __all__ = ('convertCoords', 'parseIdentifier', 'mangaid2plateifu', 'findClosestVector',
            'getWCSFromPng', 'convertImgCoords', 'getSpaxelXY',
            'downloadList', 'getSpaxel', 'get_drpall_row', 'getDefaultMapPath',
-           'getDapRedux', 'get_nsa_data', '_check_file_parameters', 'get_plot_params',
+           'getDapRedux', 'get_nsa_data', '_check_file_parameters',
            'invalidArgs', 'missingArgs', 'getRequiredArgs', 'getKeywordArgs',
            'isCallableWithArgs', 'map_bins_to_column', '_sort_dir',
-           'get_dapall_file', 'temp_setattr', 'map_dapall', 'turn_off_ion', 'memory_usage')
+           'get_dapall_file', 'temp_setattr', 'map_dapall', 'turn_off_ion', 'memory_usage',
+           'validate_jwt', 'target_status', 'target_is_observed', 'get_drpall_file',
+           'target_is_mastar', 'get_plates', 'get_manga_image', 'check_versions')
 
 drpTable = {}
+
+
+def validate_jwt(f):
+    ''' Decorator to validate a JWT and User '''
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        current_user = get_jwt_identity()
+
+        if not current_user:
+            raise MarvinError('Invalid user from API token!')
+        else:
+            marvin.config.access = 'collab'
+        return f(*args, **kwargs)
+    return wrapper
 
 
 def getSpaxel(cube=True, maps=True, modelcube=True,
@@ -186,9 +203,8 @@ def getSpaxel(cube=True, maps=True, modelcube=True,
     _spaxels = []
     for ii in range(len(iCube[0])):
         _spaxels.append(
-            marvin.tools.spaxel.SpaxelBase(jCube[0][ii], iCube[0][ii],
-                                           cube=cube, maps=maps, modelcube=modelcube,
-                                           **kwargs))
+            marvin.tools.spaxel.Spaxel(jCube[0][ii], iCube[0][ii],
+                                       cube=cube, maps=maps, modelcube=modelcube, **kwargs))
 
     if len(_spaxels) == 1 and isScalar:
         return _spaxels[0]
@@ -326,16 +342,12 @@ def mangaid2plateifu(mangaid, mode='auto', drpall=None, drpver=None):
 
     if mode == 'drpall':
 
-        if not drpall:
-            raise ValueError('no drpall file can be found.')
+        # Get the drpall table from cache or fresh
+        drpall_table = get_drpall_table(drpver=drpver, drpall=drpall)
 
-        # Loads the drpall table if it was not cached from a previos session.
-        if drpver not in drpTable:
-            drpTable[drpver] = table.Table.read(drpall)
+        mangaids = np.array([mm.strip() for mm in drpall_table['mangaid']])
 
-        mangaids = np.array([mm.strip() for mm in drpTable[drpver]['mangaid']])
-
-        plateifus = drpTable[drpver][np.where(mangaids == mangaid)]
+        plateifus = drpall_table[np.where(mangaids == mangaid)]
 
         if len(plateifus) > 1:
             warnings.warn('more than one plate-ifu found for mangaid={0}. '
@@ -379,7 +391,6 @@ def mangaid2plateifu(mangaid, mode='auto', drpall=None, drpver=None):
     elif mode == 'remote':
 
         try:
-            # response = Interaction('api/general/mangaid2plateifu/{0}/'.format(mangaid))
             url = marvin.config.urlmap['api']['mangaid2plateifu']['url']
             response = Interaction(url.format(mangaid=mangaid))
         except MarvinError as e:
@@ -476,7 +487,7 @@ def findClosestVector(point, arr_shape=None, pixel_shape=None, xyorig=None):
     return minind
 
 
-def getWCSFromPng(image):
+def getWCSFromPng(filename=None, image=None):
     """Extract any WCS info from the metadata of a PNG image.
 
     Extracts the WCS metadata info from the PNG optical
@@ -484,7 +495,9 @@ def getWCSFromPng(image):
     Converts it to an Astropy WCS object.
 
     Parameters:
-        image (str):
+        image (object):
+            An existing PIL image object
+        filename (str):
             The full path to the image
 
     Returns:
@@ -492,11 +505,18 @@ def getWCSFromPng(image):
             an Astropy WCS object
     """
 
+    assert any([image, filename]), 'Must provide either a PIL image object, or the full image filepath'
+
     pngwcs = None
-    try:
-        image = PIL.Image.open(image)
-    except Exception as e:
-        raise MarvinError('Cannot open image {0}: {1}'.format(image, e))
+
+    if filename and not image:
+        try:
+            image = PIL.Image.open(filename)
+        except Exception as e:
+            raise MarvinError('Cannot open image {0}: {1}'.format(filename, e))
+        else:
+            # Close the image
+            image.close()
 
     # get metadata
     meta = image.info if image else None
@@ -516,9 +536,6 @@ def getWCSFromPng(image):
     # Construct Astropy WCS
     if mywcs:
         pngwcs = wcs.WCS(mywcs)
-
-    # Close the image
-    image.close()
 
     return pngwcs
 
@@ -651,7 +668,9 @@ def getDapRedux(release=None):
     if not Path:
         raise MarvinError('sdss_access is not installed')
     else:
-        sdss_path = Path()
+        is_public = 'DR' in release
+        path_release = release.lower() if is_public else None
+        sdss_path = Path(public=is_public, release=path_release)
 
     release = release or marvin.config.release
     drpver, dapver = marvin.config.lookUpVersions(release=release)
@@ -676,7 +695,7 @@ def getDefaultMapPath(**kwargs):
             The plate id
         ifu (int):
             The ifu number
-        bintype (str):
+        mode (str):
             The bintype of the default file to grab, i.e. MAPS or LOGCUBE. Defaults to MAPS
         daptype (str):
             The daptype of the default map to grab.  Defaults to SPX-GAU-MILESHC
@@ -686,18 +705,22 @@ def getDefaultMapPath(**kwargs):
             The sas url to download the default maps file
     """
 
-    if not Path:
-        raise MarvinError('sdss_access is not installed')
-    else:
-        sdss_path = Path()
-
     # Get kwargs
     release = kwargs.get('release', marvin.config.release)
     drpver, dapver = marvin.config.lookUpVersions(release=release)
     plate = kwargs.get('plate', None)
     ifu = kwargs.get('ifu', None)
     daptype = kwargs.get('daptype', 'SPX-GAU-MILESHC')
-    bintype = kwargs.get('bintype', 'MAPS')
+    mode = kwargs.get('mode', 'MAPS')
+    assert mode in ['MAPS', 'LOGCUBE'], 'mode can either be MAPS or LOGCUBE'
+
+    # get sdss_access Path
+    if not Path:
+        raise MarvinError('sdss_access is not installed')
+    else:
+        is_public = 'DR' in release
+        path_release = release.lower() if is_public else None
+        sdss_path = Path(public=is_public, release=path_release)
 
     # get the sdss_path name by MPL
     # TODO: this is likely to break in future MPL/DRs. Just a heads up.
@@ -708,7 +731,7 @@ def getDefaultMapPath(**kwargs):
 
     # construct the url link to default maps file
     maplink = sdss_path.url(name, drpver=drpver, dapver=dapver, mpl=release,
-                            plate=plate, ifu=ifu, daptype=daptype, mode=bintype)
+                            plate=plate, ifu=ifu, daptype=daptype, mode=mode)
     return maplink
 
 
@@ -721,16 +744,18 @@ def downloadList(inputlist, dltype='cube', **kwargs):
 
     i.e. $SAS_BASE_DIR/mangawork/manga/spectro/redux
 
-    Can download cubes, rss files, maps, mastar cubes, png images, default maps, or
-    the entire plate directory.
+    Can download cubes, rss files, maps, modelcubes, mastar cubes,
+    png images, default maps, or the entire plate directory.
+    dltype=`dap` is a special keyword that downloads all DAP files.  It sets binmode
+    and daptype to '*'
 
     Parameters:
         inputlist (list):
             Required.  A list of objects to download.  Must be a list of plate IDs,
             plate-IFUs, or manga-ids
-        dltype ({'cube', 'map', 'image', 'rss', 'mastar', 'default', 'plate'}):
+        dltype ({'cube', 'maps', 'modelcube', 'dap', image', 'rss', 'mastar', 'default', 'plate'}):
             Indicated type of object to download.  Can be any of
-            plate, cube, imagea, mastar, rss, map, or default (default map).
+            plate, cube, image, mastar, rss, map, modelcube, or default (default map).
             If not specified, the dltype defaults to cube.
         release (str):
             The MPL/DR version of the data to download.
@@ -749,10 +774,14 @@ def downloadList(inputlist, dltype='cube', **kwargs):
             Turns on verbosity during rsync
         limit (int):
             A limit to the number of items to download
+        test (bool):
+            If True, tests the download path construction but does not download
 
     Returns:
-        NA: Downloads
+        If test=True, returns the list of full filepaths that will be downloaded
     """
+
+    assert isinstance(inputlist, (list, np.ndarray)), 'inputlist must be a list or numpy array'
 
     # Get some possible keywords
     # Necessary rsync variables:
@@ -762,11 +791,12 @@ def downloadList(inputlist, dltype='cube', **kwargs):
     release = kwargs.get('release', marvin.config.release)
     drpver, dapver = marvin.config.lookUpVersions(release=release)
     bintype = kwargs.get('bintype', '*')
-    binmode = kwargs.get('binmode', '*')
+    binmode = kwargs.get('binmode', None)
     daptype = kwargs.get('daptype', '*')
     dir3d = kwargs.get('dir3d', '*')
     n = kwargs.get('n', '*')
     limit = kwargs.get('limit', None)
+    test = kwargs.get('test', None)
 
     # check for sdss_access
     if not RsyncAccess:
@@ -774,8 +804,11 @@ def downloadList(inputlist, dltype='cube', **kwargs):
 
     # Assert correct dltype
     dltype = 'cube' if not dltype else dltype
-    assert dltype in ['plate', 'cube', 'mastar', 'rss', 'map', 'image',
-                      'default'], 'dltype must be one of plate, cube, mastar, image, rss, map, default'
+    assert dltype in ['plate', 'cube', 'mastar', 'modelcube', 'dap', 'rss', 'maps', 'image',
+                      'default'], ('dltype must be one of plate, cube, mastar, '
+                                   'image, rss, maps, modelcube, dap, default')
+
+    assert binmode in [None, '*', 'MAPS', 'LOGCUBE'], 'binmode can only be *, MAPS or LOGCUBE'
 
     # Assert correct dir3d
     if dir3d != '*':
@@ -795,19 +828,34 @@ def downloadList(inputlist, dltype='cube', **kwargs):
         name = 'mangadefault'
     elif dltype == 'plate':
         name = 'mangaplate'
-    elif dltype == 'map':
+    elif dltype == 'maps':
         # needs to change to include DR
         if '4' in release:
             name = 'mangamap'
         else:
             name = 'mangadap5'
+            binmode = 'MAPS'
+    elif dltype == 'modelcube':
+        name = 'mangadap5'
+        binmode = 'LOGCUBE'
+    elif dltype == 'dap':
+        name = 'mangadap5'
+        binmode = '*'
+        daptype = '*'
     elif dltype == 'mastar':
         name = 'mangamastar'
     elif dltype == 'image':
-        name = 'mangaimage'
+        if check_versions(drpver, 'v2_5_3'):
+            name = 'mangaimagenew'
+        else:
+            name = 'mangaimage'
+
+    # check for public release
+    is_public = 'DR' in release
+    rsync_release = release.lower() if is_public else None
 
     # create rsync
-    rsync_access = RsyncAccess(label='marvin_download', verbose=verbose)
+    rsync_access = RsyncAccess(label='marvin_download', verbose=verbose, public=is_public, release=rsync_release)
     rsync_access.remote()
 
     # Add objects
@@ -815,7 +863,7 @@ def downloadList(inputlist, dltype='cube', **kwargs):
         if idtype == 'mangaid':
             try:
                 plateifu = mangaid2plateifu(item)
-            except MarvinError as e:
+            except MarvinError:
                 plateifu = None
             else:
                 plateid, ifu = plateifu.split('-')
@@ -836,29 +884,77 @@ def downloadList(inputlist, dltype='cube', **kwargs):
 
     # get the list and download
     listofitems = rsync_access.get_urls() if as_url else rsync_access.get_paths()
-    rsync_access.commit(limit=limit)
+
+    # print download location
+    item = listofitems[0] if listofitems else None
+    if item:
+        ver = dapver if dapver in item else drpver
+        dlpath = item[:item.rfind(ver) + len(ver)]
+        if verbose:
+            print('Target download directory: {0}'.format(dlpath))
+
+    if test:
+        return listofitems
+    else:
+        rsync_access.commit(limit=limit)
+
+
+def get_drpall_file(drpall=None, drpver=None):
+    ''' Check for/download the drpall file
+
+    Checks for existence of a local drpall file for the
+    current release set.  If not found, uses sdss_access
+    to download it.
+
+    Parameters:
+        drpall (str):
+            The local path to the drpall file
+        drpver (str):
+            The DRP version
+    '''
+    from marvin import config
+
+    # check for public release
+    is_public = 'DR' in config.release
+    release = config.release.lower() if is_public else None
+
+    # get drpver
+    config_drpver, __ = config.lookUpVersions()
+    drpver = drpver if drpver else config_drpver
+
+    if not drpall:
+        drpall = config._getDrpAllPath(drpver=drpver)
+
+    if not os.path.isfile(drpall):
+        warnings.warn('drpall file not found. Downloading it.', MarvinUserWarning)
+        rsync = RsyncAccess(label='get_drpall', public=is_public, release=release)
+        rsync.remote()
+        rsync.add('drpall', drpver=drpver)
+        try:
+            rsync.set_stream()
+        except Exception as e:
+            raise MarvinError('Could not download the drpall file with sdss_access: '
+                              '{0}\nTry manually downloading it for version {1} and '
+                              'placing it {2}'.format(e, drpver, drpall))
+        else:
+            rsync.commit()
 
 
 def get_drpall_row(plateifu, drpver=None, drpall=None):
     """Returns a dictionary from drpall matching the plateifu."""
 
-    from marvin import config
-
-    if drpall:
-        drpall_table = table.Table.read(drpall)
-    else:
-        config_drpver, __ = config.lookUpVersions()
-        drpver = drpver if drpver else config_drpver
-        if drpver not in drpTable:
-            drpall = drpall if drpall else config._getDrpAllPath(drpver=drpver)
-            drpTable[drpver] = table.Table.read(drpall)
-        drpall_table = drpTable[drpver]
+    # get the drpall table
+    drpall_table = get_drpall_table(drpver=drpver, drpall=drpall, hdu='MANGA')
+    in_table = plateifu in drpall_table['plateifu']
+    # check the mastar extension
+    if not in_table:
+        drpall_table = get_drpall_table(drpver=drpver, drpall=drpall, hdu='MASTAR')
+        in_table = plateifu in drpall_table['plateifu']
+        if not in_table:
+            raise ValueError('No results found for {0} in drpall table'.format(plateifu))
 
     row = drpall_table[drpall_table['plateifu'] == plateifu]
-
-    if len(row) != 1:
-        raise ValueError('{0} results found for {1} in drpall table'.format(len(row), plateifu))
-
+        
     return row[0]
 
 
@@ -1019,20 +1115,6 @@ def _check_file_parameters(obj1, obj2):
                       .format(param, obj1.__repr__, obj2.__repr__, getattr(obj1, param),
                               getattr(obj2, param)))
         assert getattr(obj1, param) == getattr(obj2, param), assert_msg
-
-
-def get_plot_params(dapver, prop):
-    """Return default plotting parameters for a property."""
-    params = get_default_plot_params(dapver)
-
-    if 'vel' in prop:
-        key = 'vel'
-    elif 'sigma' in prop:
-        key = 'sigma'
-    else:
-        key = 'default'
-
-    return params[key]
 
 
 def add_doc(value):
@@ -1284,7 +1366,11 @@ def get_dapall_file(drpver, dapver):
 
     assert Path is not None, 'sdss_access.path.Path is not available.'
 
-    dapall_path = Path().full('dapall', dapver=dapver, drpver=drpver)
+    release = marvin.config.lookUpRelease(drpver)
+    is_public = 'DR' in release
+    path_release = release.lower() if is_public else None
+    path = Path(public=is_public, release=path_release)
+    dapall_path = path.full('dapall', dapver=dapver, drpver=drpver)
 
     return dapall_path
 
@@ -1493,3 +1579,222 @@ def memory_usage(where):
     print("Memory summary: {0}".format(where))
     pympler.summary.print_(mem_summary, limit=2)
     print("VM: {0:.2f}Mb".format(get_virtual_memory_usage_kb() / 1024.0))
+
+
+def target_status(mangaid, mode='auto', source='nsa', drpall=None, drpver=None):
+    ''' Check the status of a MaNGA target
+
+    Given a mangaid, checks the status of a target.  Will check if
+    target exists in the NSA catalog (i.e. is a proper target) and checks if
+    target has a corresponding plate-IFU designation (i.e. has been observed).
+
+    Returns a string status indicating if a target has been observed, has not
+    yet been observed, or is not a valid MaNGA target.
+
+    Parameters:
+        mangaid (str):
+            The mangaid of the target to check for observed status
+        mode ({'auto', 'drpall', 'db', 'remote', 'local'}):
+            See mode in :func:`mangaid2plateifu` and :func:`get_nsa_data`.
+        source ({'nsa', 'drpall'}):
+            The NSA catalog data source. See source in :func:`get_nsa_data`.
+        drpall (str or None):
+            The drpall file to use.  See drpall in :func:`mangaid2plateifu` and :func:`get_nsa_data`.
+        drpver (str or None):
+            The DRP version to use.  See drpver in :func:`mangaid2plateifu` and :func:`get_nsa_data`.
+
+    Returns:
+        A status of "observed", "not yet observed", or "not valid target"
+
+    '''
+
+    # check for plateifu - target has been observed
+    try:
+        plateifu = mangaid2plateifu(mangaid, mode=mode, drpver=drpver, drpall=drpall)
+    except (MarvinError, BrainError) as e:
+        plateifu = None
+
+    # check if target in NSA catalog - proper manga target
+    try:
+        nsa = get_nsa_data(mangaid, source=source, mode=mode, drpver=drpver, drpall=drpall)
+    except (MarvinError, BrainError) as e:
+        nsa = None
+
+    # return observed boolean
+    if plateifu and nsa:
+        status = 'observed'
+    elif not plateifu and nsa:
+        status = 'not yet observed'
+    elif not plateifu and not nsa:
+        status = 'not valid target'
+
+    return status
+
+
+def target_is_observed(mangaid, mode='auto', source='nsa', drpall=None, drpver=None):
+    ''' Check if a MaNGA target has been observed or not
+
+    See :func:`target_status` for full documentation.
+
+    Returns:
+        True if the target has been observed.
+
+    '''
+    # check the target status
+    status = target_status(mangaid, source=source, mode=mode, drpver=drpver, drpall=drpall)
+    return status == 'observed'
+
+
+def target_is_mastar(plateifu, drpver=None, drpall=None):
+    ''' Check if a target is bright-time MaStar target
+
+    Uses the local drpall file to check if a plateifu is a MaStar target
+
+    Parameters:
+        plateifu (str):
+            The plateifu of the target
+        drpver (str):
+            The drpver version to check against
+        drpall (str):
+            The drpall file path
+
+    Returns:
+        True if it is
+
+    '''
+
+    row = get_drpall_row(plateifu, drpver=drpver, drpall=drpall)
+    return row['srvymode'] == 'APOGEE lead'
+
+
+def get_drpall_table(drpver=None, drpall=None, hdu='MANGA'):
+    ''' Gets the drpall table
+
+    Gets the drpall table either from cache or loads it. For releases
+    of MPL-8 and up, galaxies are in the MANGA extension, and mastar
+    targets are in the MASTAR extension, specified with the hdu keyword. For
+    MPLs 1-7, there is only one data extension, which is read.
+
+    Parameters:
+        drpver (str):
+            The DRP release version to load.  Defaults to current marvin release
+        drpall (str):
+            The full path to the drpall table. Defaults to current marvin release.
+        hdu (str):
+            The name of the HDU to read in.  Default is 'MANGA'
+
+    Returns:
+        An Astropy Table
+    '''
+
+    from marvin import config
+    assert hdu.lower() in ['manga', 'mastar'], 'hdu can either be MANGA or MASTAR'
+    hdu = hdu.upper()
+
+    # get the drpall file
+    get_drpall_file(drpall=drpall, drpver=drpver)
+
+    # Loads the drpall table if it was not cached from a previous session.
+    config_drpver, __ = config.lookUpVersions()
+    drpver = drpver if drpver else config_drpver
+
+    # check for drpver
+    if drpver not in drpTable:
+        drpTable[drpver] = {}
+
+    # check for hdu
+    hduext = hdu if check_versions(drpver, 'v2_5_3') else 'MANGA'
+    if hdu not in drpTable[drpver]:
+        drpall = drpall if drpall else config._getDrpAllPath(drpver=drpver)
+        data = {hduext: table.Table.read(drpall, hdu=hduext)}
+        drpTable[drpver].update(data)
+
+    drpall_table = drpTable[drpver][hduext]
+
+    return drpall_table
+
+
+def get_plates(drpver=None, drpall=None, release=None):
+    ''' Get a list of unique plates from the drpall file
+
+    Parameters:
+        drpver (str):
+            The DRP release version to load.  Defaults to current marvin release
+        drpall (str):
+            The full path to the drpall table. Defaults to current marvin release.
+        release (str):
+            The marvin release
+
+    Returns:
+        A list of plate ids
+
+    '''
+    assert not all([drpver, release]), 'Cannot set both drpver and release '
+
+    if release:
+        drpver, __ = marvin.config.lookUpVersions(release)
+
+    drpall_table = get_drpall_table(drpver=drpver, drpall=drpall)
+    plates = list(set(drpall_table['plate']))
+    return plates
+
+
+def check_versions(version1, version2):
+    ''' Compate two version ids against each other
+    
+    Checks if version1 is greater than or equal to version2.
+
+    Parameters:
+        version1 (str):
+            The version to check
+        version2 (str):
+            The version to check against
+    
+    Returns:
+        A boolean indicating if version1 is >= version2
+    '''
+
+    return parse_version(version1) >= parse_version(version2)
+
+
+def get_manga_image(cube=None, drpver=None, plate=None, ifu=None, dir3d=None):
+    ''' Get a MaNGA IFU optical PNG image
+
+    Parameters:
+        cube (Cube):
+            A Marvin Cube instance
+        drpver (str):
+            The drpver version
+        plate (str|int):
+            The plate id
+        ifu (str|int):
+            An IFU designation
+        dir3d (str):
+            The directory for 3d data, either 'stack' or 'mastar'
+    Returns:
+        A url to an IFU MaNGA image
+    '''
+
+    # check inputs
+    drpver = cube._drpver if cube else drpver
+    plate = cube.plate if cube else plate
+    ifu = cube.ifu if cube else ifu
+    dir3d = cube.dir3d if cube else dir3d
+    assert all([drpver, plate, ifu]), 'drpver, plate, and ifu must be specified'
+
+    # create the sdss Path
+    release = marvin.config.lookUpRelease(drpver)
+    is_public = 'DR' in release
+    path_release = release.lower() if is_public else None
+    path = Path(public=is_public, release=path_release)
+
+    # check if MPL-8 or not
+    is_MPL8 = check_versions(drpver, 'v2_5_3')
+    if is_MPL8:
+        img = path.url('mangaimagenew', drpver=drpver, plate=plate, ifu=ifu)
+    else:
+        assert dir3d is not None, 'dir3d must also be specified'
+        assert dir3d in ['stack', 'mastar'], 'dir3d can only be stack or mastar'
+        img = path.url('mangaimage', drpver=drpver, plate=plate, ifu=ifu, dir3d=dir3d)
+    return img
+    
