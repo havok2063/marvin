@@ -20,10 +20,10 @@ import warnings
 
 
 try:
-    from sdss_access import RsyncAccess, AccessError
+    from sdss_access import Access, AccessError
 except ImportError:
     Path = None
-    RsyncAccess = None
+    Access = None
 
 
 imagelist = ['8485-1901', '7443-12701', '7443-1901']
@@ -34,7 +34,7 @@ newgals = ['7495-1901']
 def rsync(mode):
     ''' fixture to create generic rsync object '''
 
-    rsync = RsyncAccess(label='marvin_getlist', verbose=False)
+    rsync = Access(label='marvin_getlist', verbose=False)
     if mode != 'local':
         rsync.remote()
     yield rsync
@@ -97,7 +97,7 @@ def make_paths(request, rsync, mode, asurl, release):
         gal = Galaxy(plateifu)
         gal.set_params(release=release)
         gal.set_filepaths()
-        name = 'mangaimagenew' if check_versions(gal.drpver, 'v2_5_3') else 'mangaimage'
+        name = 'mangaimage'
         if mode == 'local':
             path = rsync.__getattribute__(rmode)(name, **gal.access_kwargs)
             fullpaths.append(path)

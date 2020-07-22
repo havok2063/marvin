@@ -19,7 +19,7 @@ from collections import OrderedDict
 from astropy.wcs import FITSFixedWarning
 
 # Set the Marvin version
-__version__ = '2.3.3dev'
+__version__ = '2.4.1dev'
 
 # Does this so that the implicit module definitions in extern can happen.
 # time - 483 ms
@@ -35,7 +35,7 @@ from brain.core.logger import initLog
 if 'MARVIN_LOGS_DIR' in os.environ:
     logFilePath = os.path.join(os.path.realpath(os.environ['MARVIN_LOGS_DIR']), 'marvin.log')
 else:
-    logFilePath = os.path.realpath(os.path.join(os.environ['HOME'], '.marvin', 'marvin.log'))
+    logFilePath = os.path.realpath(os.path.join(os.path.expanduser('~'), '.marvin', 'marvin.log'))
 
 # Inits the log
 log = initLog(logFilePath)
@@ -88,6 +88,7 @@ class MarvinConfig(object):
 
         self._custom_config = None
         self._drpall = None
+        self._dapall = None
         self._inapp = False
 
         self._urlmap = None
@@ -102,7 +103,7 @@ class MarvinConfig(object):
         self._allowed_releases = {}
 
         # Allow DAP queries
-        self._allow_DAP_queries = False
+        self._allow_DAP_queries = True
 
         # perform some checks
         self._load_defaults()
@@ -209,7 +210,7 @@ class MarvinConfig(object):
         self._checkPaths('MANGA_SPECTRO_REDUX')
         self._checkPaths('MANGA_SPECTRO_ANALYSIS')
 
-    def setDefaultDrpAll(self, drpver=None):
+    def setDefaultDrpAll(self, drpver=None, dapver=None):
         """Tries to set the default location of drpall.
 
         Sets the drpall attribute to the location of your DRPall file, based on the
@@ -221,18 +222,33 @@ class MarvinConfig(object):
                 The DRP version to set.  Defaults to the version corresponding to config.release.
         """
 
-        if not drpver:
-            drpver, __ = self.lookUpVersions(self.release)
+        if not drpver or not dapver:
+            drpver, dapver = self.lookUpVersions(self.release)
         self.drpall = self._getDrpAllPath(drpver)
+        self.dapall = self._getDapAllPath(drpver, dapver)
+
+    def _get_default_path(self, name, drpver, dapver=None):
+        ''' Return a default path to a summary file '''
+        assert name in ['drpall', 'dapall'], 'name must be either drpall or dapall'
+        envvar = 'MANGA_SPECTRO_REDUX' if name == 'drpall' else 'MANGA_SPECTRO_ANALYSIS'
+        version = drpver if name == 'drpall' else dapver
+        if name == 'drpall':
+            path = os.path.join(str(drpver), 'drpall-{0}.fits'.format(version))
+        elif name == 'dapall':
+            path = os.path.join(str(drpver), str(dapver), 'dapall-{0}-{1}.fits'.format(drpver, dapver))
+
+        if envvar in os.environ and version:
+            return os.path.join(os.environ[envvar], path)
+        else:
+            raise MarvinError('Must have the {0} environment variable set'.format(envvar))
 
     def _getDrpAllPath(self, drpver):
         """Returns the default path for drpall, give a certain ``drpver``."""
+        return self._get_default_path('drpall', drpver)
 
-        if 'MANGA_SPECTRO_REDUX' in os.environ and drpver:
-            return os.path.join(os.environ['MANGA_SPECTRO_REDUX'], str(drpver),
-                                'drpall-{0}.fits'.format(drpver))
-        else:
-            raise MarvinError('Must have the MANGA_SPECTRO_REDUX environment variable set')
+    def _getDapAllPath(self, drpver, dapver):
+        """Returns the default path for dapall, give a certain ``drpver, dapver``."""
+        return self._get_default_path('dapall', drpver, dapver=dapver)
 
 ############ Brain Config overrides ############
 # These are configuration parameter defined in Brain.bconfig. We need
@@ -270,9 +286,12 @@ class MarvinConfig(object):
         with self._replant_tree(value) as val:
             self._release = val
 
+        drpver, dapver = self.lookUpVersions(value)
         if 'MANGA_SPECTRO_REDUX' in os.environ:
-            drpver, __ = self.lookUpVersions(value)
             self.drpall = self._getDrpAllPath(drpver)
+
+        if 'MANGA_SPECTRO_ANALYSIS' in os.environ:
+            self.dapall = self._getDapAllPath(drpver, dapver)
 
     @property
     def access(self):
@@ -368,6 +387,19 @@ class MarvinConfig(object):
             warnings.warn('path {0} cannot be found. Setting drpall to None.'
                           .format(value), MarvinUserWarning)
 
+    @property
+    def dapall(self):
+        return self._dapall
+
+    @dapall.setter
+    def dapall(self, value):
+        if os.path.exists(value):
+            self._dapall = value
+        else:
+            self._dapall = None
+            warnings.warn('path {0} cannot be found. Setting dapall to None.'
+                          .format(value), MarvinUserWarning)
+
     def _setDbConfig(self):
         ''' Set the db configuration '''
         self.db = getDbMachine()
@@ -376,13 +408,15 @@ class MarvinConfig(object):
         ''' Update the allowed releases based on access '''
 
         # define release dictionaries
-        mpldict = {'MPL-8': ('v2_5_3', '2.3.0'),
+        mpldict = {'MPL-9': ('v2_7_1', '2.4.1'),
+                   'MPL-8': ('v2_5_3', '2.3.0'),
                    'MPL-7': ('v2_4_3', '2.2.1'),
                    'MPL-6': ('v2_3_1', '2.1.3'),
                    'MPL-5': ('v2_0_1', '2.0.2'),
                    'MPL-4': ('v1_5_1', '1.1.1')}
 
-        drdict = {'DR15': ('v2_4_3', '2.2.1')}
+        drdict = {'DR15': ('v2_4_3', '2.2.1'),
+                  'DR16': ('v2_4_3', '2.2.1')}
 
         # set the allowed releases based on access
         self._allowed_releases = {}
@@ -396,11 +430,14 @@ class MarvinConfig(object):
         relsorted = sorted(self._allowed_releases.items(), key=lambda p: p[1][0], reverse=True)
         self._allowed_releases = OrderedDict(relsorted)
 
-    def _get_latest_release(self, mpl_only=None):
+    def _get_latest_release(self, mpl_only=None, dr_only=None):
         ''' Get the latest release from allowed list '''
 
         if mpl_only:
-            return [r for r in list(self._allowed_releases) if 'MPL' in r][0]
+            return max([r for r in list(self._allowed_releases) if 'MPL' in r], key=lambda t: int(t.split('-')[-1]))
+
+        if dr_only:
+            return max([r for r in list(self._allowed_releases) if 'DR' in r], key=lambda t: int(t[2:]))
 
         return list(self._allowed_releases)[0]
 
@@ -486,19 +523,25 @@ class MarvinConfig(object):
 
         return drpver, dapver
 
-    def lookUpRelease(self, drpver):
+    def lookUpRelease(self, drpver, public_only=None):
         """Retrieve the release version for a given DRP version
 
         Parameters:
             drpver (str):
                 The DRP version to use
+            public_only (bool):
+                If True, uses only DR releases
         Returns:
             release (str):
                 The release version according to the input DRP version
         """
 
         # Flip the mpldict
-        verdict = {val[0]: key for key, val in self._allowed_releases.items()}
+        verdict = {}
+        for key, val in self._allowed_releases.items():
+            if (public_only and 'MPL' in key) or (not public_only and 'DR' in key):
+                continue
+            verdict[val[0]] = key
 
         try:
             release = verdict[drpver]

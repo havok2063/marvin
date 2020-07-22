@@ -231,7 +231,7 @@ class Maps(MarvinToolsClass, NSAMixIn, DAPallMixIn, GetApertureMixIn):
             daptype = '{0}-{1}'.format(self.bintype.name, self.template.name)
             params = dict(drpver=self._drpver, dapver=self._dapver,
                           plate=plate, ifu=ifu, mode='MAPS', daptype=daptype,
-                          path_type='mangadap5')
+                          path_type='mangadap')
 
         return params
 
@@ -436,7 +436,7 @@ class Maps(MarvinToolsClass, NSAMixIn, DAPallMixIn, GetApertureMixIn):
 
                         if table not in _db_rows:
                             _db_rows[table] = mdb.session.query(table).filter(
-                                table.file_pk == self.data.pk, table.x == x, table.y == y).one()
+                                table.file_pk == self.data.pk, table.x == x, table.y == y).use_cache(self.cache_region).one()
 
                         colname = dm.db_column(ext=None if key == 'value' else key)
                         data[key] = getattr(_db_rows[table], colname)

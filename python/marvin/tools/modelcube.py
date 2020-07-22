@@ -151,7 +151,7 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn, GetApertureMixIn):
         plate, ifu = self.plateifu.split('-')
         daptype = '{0}-{1}'.format(self.bintype, self.template)
 
-        return super(ModelCube, self)._getFullPath('mangadap5', ifu=ifu,
+        return super(ModelCube, self)._getFullPath('mangadap', ifu=ifu,
                                                    drpver=self._drpver,
                                                    dapver=self._dapver,
                                                    plate=plate, mode='LOGCUBE',
@@ -166,7 +166,7 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn, GetApertureMixIn):
         plate, ifu = self.plateifu.split('-')
         daptype = '{0}-{1}'.format(self.bintype, self.template)
 
-        return super(ModelCube, self).download('mangadap5', ifu=ifu,
+        return super(ModelCube, self).download('mangadap', ifu=ifu,
                                                drpver=self._drpver,
                                                dapver=self._dapver,
                                                plate=plate, mode='LOGCUBE',
@@ -264,7 +264,7 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn, GetApertureMixIn):
                                     dapdb.Template,
                                     dapdb.Structure.template_kin_pk == dapdb.Template.pk).filter(
                                         dapdb.BinType.name == self.bintype.name,
-                                        dapdb.Template.name == self.template.name).all()
+                                        dapdb.Template.name == self.template.name).use_cache(self.cache_region).all()
 
                 if len(db_modelcube) > 1:
                     raise MarvinError('more than one ModelCube found for '
@@ -440,7 +440,7 @@ class ModelCube(MarvinToolsClass, NSAMixIn, DAPallMixIn, GetApertureMixIn):
                         if not _db_row:
                             _db_row = session.query(dapdb.ModelSpaxel).filter(
                                 dapdb.ModelSpaxel.modelcube_pk == self.data.pk,
-                                dapdb.ModelSpaxel.x == x, dapdb.ModelSpaxel.y == y).one()
+                                dapdb.ModelSpaxel.x == x, dapdb.ModelSpaxel.y == y).use_cache(self.cache_region).one()
 
                         data[key] = np.array(getattr(_db_row, colname))
 

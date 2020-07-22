@@ -198,7 +198,7 @@ class TestConfig(object):
         assert 'You must have collaboration access to login.' in str(cm.value)
 
     @pytest.mark.parametrize('defrel, exprel',
-                             [('DR20', 'MPL-7'), ('bad_release', 'MPL-7')])
+                             [('DR20', 'MPL-9'), ('bad_release', 'MPL-9')])
     def test_bad_default_release(self, initconfig, defrel, exprel):
         ''' this tests some initial conditions on config '''
         config._release = defrel
@@ -207,6 +207,14 @@ class TestConfig(object):
         with pytest.warns(MarvinUserWarning):
             warnings.warn(msg, MarvinUserWarning)
         assert config.release == exprel
+
+    def test_summary_files(self):
+        config.setDefaultDrpAll()  # need to reset the config
+        drp, dap = config.lookUpVersions()
+        assert config.drpall is not None
+        assert config.dapall is not None
+        assert 'drpall-{0}'.format(drp) in config.drpall
+        assert 'dapall-{0}-{1}'.format(drp, dap) in config.dapall
 
 
 @pytest.mark.usefixtures('setapi')
